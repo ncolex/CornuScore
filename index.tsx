@@ -4,7 +4,6 @@ import ReactDOM from 'react-dom/client';
 import App from './App';
 import { HashRouter } from 'react-router-dom';
 import './index.css';
-import './index.css';
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {

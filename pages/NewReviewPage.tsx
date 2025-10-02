@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { submitReview } from '../services/airtableService';
-import { CATEGORIES } from '../constants';
+import { CATEGORIES, RATING_OPTIONS } from '../constants';
 import { ReviewCategory } from '../types';
+import { getPseudoUser } from '../utils/pseudoUser';
 
 const countryList = ["Argentina", "Bolivia", "Brasil", "Chile", "Colombia", "Ecuador", "España", "México", "Paraguay", "Perú", "Uruguay", "Venezuela", "Otro"];
 
@@ -11,10 +12,12 @@ const NewReviewPage: React.FC = () => {
   const [country, setCountry] = useState('');
   const [category, setCategory] = useState<ReviewCategory | null>(null);
   const [text, setText] = useState('');
+  const [ratingEmoji, setRatingEmoji] = useState('🤔');
   const [evidence, setEvidence] = useState<File | null>(null);
   const [evidencePreview, setEvidencePreview] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [pseudoUser] = useState(() => getPseudoUser());
   const navigate = useNavigate();
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -34,7 +37,7 @@ const NewReviewPage: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!personIdentifier || !country || !category || !text) {
+    if (!personIdentifier || !country || !category || !text || !ratingEmoji) {
       setError('Por favor, completa todos los campos obligatorios.');
       return;
     }
@@ -60,13 +63,15 @@ const NewReviewPage: React.FC = () => {
             return;
         }
     }
-
-
-    // In a real app, pseudoAuthor would come from a user session
-    const pseudoAuthor = `user${Math.floor(Math.random() * 1000)}`;
-    const score = CATEGORIES[category].score;
-
-    const success = await submitReview({ personIdentifier, country, category, text, score, pseudoAuthor, evidenceUrl });
+    const success = await submitReview({
+      personIdentifier,
+      country,
+      category,
+      ratingEmoji,
+      text,
+      pseudoAuthor: pseudoUser,
+      evidenceUrl,
+    });
     setIsLoading(false);
 
     if (success) {
@@ -137,6 +142,29 @@ const NewReviewPage: React.FC = () => {
           </div>
 
           <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Puntuación con emoji <span className="text-red-500">*</span>
+            </label>
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
+              {RATING_OPTIONS.map((option) => (
+                <button
+                  key={option.emoji}
+                  type="button"
+                  onClick={() => setRatingEmoji(option.emoji)}
+                  className={`flex flex-col items-center justify-center gap-1 px-3 py-2 rounded-xl border text-sm transition-all ${
+                    ratingEmoji === option.emoji
+                      ? 'bg-pink-500 text-white border-pink-300 shadow-lg'
+                      : 'bg-white text-gray-700 border-pink-200 hover:bg-pink-50'
+                  }`}
+                >
+                  <span className="text-2xl" role="img" aria-label={option.label}>{option.emoji}</span>
+                  <span className="text-[11px] text-center leading-tight">{option.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div>
             <label htmlFor="text" className="block text-sm font-medium text-gray-700 mb-1">
               Tu experiencia (máx. 200 caracteres) <span className="text-red-500">*</span>
             </label>
@@ -172,6 +200,10 @@ const NewReviewPage: React.FC = () => {
           </div>
 
           {error && <p className="text-red-500 text-sm text-center">{error}</p>}
+
+          <p className="text-center text-sm text-gray-500">
+            Publicarás como <span className="font-semibold text-pink-500">{pseudoUser}</span>.
+          </p>
           
           <div className="text-center text-xs text-gray-700 bg-yellow-100/80 border border-yellow-300 p-3 rounded-lg">
             <p className="font-bold text-yellow-800">

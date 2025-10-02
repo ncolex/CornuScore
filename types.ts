@@ -17,6 +17,7 @@ export enum ReputationLevel {
 export interface Review {
   id: string;
   category: ReviewCategory;
+  ratingEmoji: string;
   text: string;
   score: number;
   date: string; // ISO 8601 format
@@ -32,6 +33,7 @@ export interface PersonProfile {
   country: string;
   totalScore: number;
   reputation: ReputationLevel;
+  reviewCount: number;
   reviews: Review[];
 }
 

@@ -6,17 +6,22 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "bot": "ts-node --esm -r dotenv/config bot/telegramBot.ts"
   },
   "dependencies": {
     "airtable": "^0.12.2",
+    "dotenv": "^16.4.7",
+    "node-telegram-bot-api": "^0.66.0",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "react-router-dom": "^7.9.3"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",
+    "@types/node-telegram-bot-api": "^0.64.7",
     "@vitejs/plugin-react": "^5.0.0",
+    "ts-node": "^10.9.2",
     "typescript": "~5.8.2",
     "vite": "^6.2.0"
   }

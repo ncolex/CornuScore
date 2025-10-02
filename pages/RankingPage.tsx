@@ -13,7 +13,7 @@ const RankingCard: React.FC<{ profile: PersonProfile; rank: number }> = ({ profi
         <span className={`text-2xl font-bold w-10 text-center ${reputationDetails.color}`}>#{rank}</span>
         <div className="flex-grow">
           <p className="font-bold text-lg text-gray-800 capitalize">{profile.identifiers[0]}</p>
-          <p className="text-sm text-gray-500">{profile.reviews.length} reseñas</p>
+          <p className="text-sm text-gray-500">{profile.reviewCount} reseñas</p>
         </div>
         <i className={`${reputationDetails.icon} text-3xl ${reputationDetails.color}`}></i>
       </div>
@@ -55,11 +55,15 @@ const RankingPage: React.FC = () => {
             <i className="fa-solid fa-arrow-trend-down"></i>
             Top 5 Negativos
           </h2>
-          <div className="space-y-3">
-            {rankings?.topNegative.map((profile, index) => (
-              <RankingCard key={profile.id} profile={profile} rank={index + 1} />
-            ))}
-          </div>
+          {rankings && rankings.topNegative.length > 0 ? (
+            <div className="space-y-3">
+              {rankings.topNegative.map((profile, index) => (
+                <RankingCard key={profile.id} profile={profile} rank={index + 1} />
+              ))}
+            </div>
+          ) : (
+            <p className="text-center text-gray-500 bg-white/70 rounded-xl p-6">Aún no hay suficientes reseñas negativas.</p>
+          )}
         </div>
 
         {/* Top Positivo */}
@@ -68,11 +72,15 @@ const RankingPage: React.FC = () => {
             <i className="fa-solid fa-arrow-trend-up"></i>
             Top 5 Positivos
           </h2>
-          <div className="space-y-3">
-             {rankings?.topPositive.map((profile, index) => (
-              <RankingCard key={profile.id} profile={profile} rank={index + 1} />
-            ))}
-          </div>
+          {rankings && rankings.topPositive.length > 0 ? (
+            <div className="space-y-3">
+              {rankings.topPositive.map((profile, index) => (
+                <RankingCard key={profile.id} profile={profile} rank={index + 1} />
+              ))}
+            </div>
+          ) : (
+            <p className="text-center text-gray-500 bg-white/70 rounded-xl p-6">Aún no hay reseñas positivas destacadas.</p>
+          )}
         </div>
       </div>
     </div>
