@@ -21,6 +21,12 @@ const base = new Airtable({ apiKey: AIRTABLE_API_KEY }).base(AIRTABLE_BASE_ID);
 const PEOPLE_TABLE = 'Personas';
 const REVIEWS_TABLE = 'Reseñas';
 
+interface AirtableRecordResult<TFields = Record<string, unknown>> {
+    id: string;
+    createdTime: string;
+    fields: TFields;
+}
+
 // Helper to calculate reputation score from category
 const getScoreFromCategory = (category: ReviewCategory): number => {
     switch (category) {
@@ -67,6 +73,50 @@ const fetchReviewsForPerson = async (personRecordId: string): Promise<Review[]> 
         fetchNextPage();
     });
     return reviews;
+};
+
+export const searchPersons = async (query: string): Promise<AirtableRecordResult[]> => {
+    const trimmedQuery = query.trim();
+    if (!trimmedQuery) {
+        return [];
+    }
+
+    if (!AIRTABLE_API_KEY || !AIRTABLE_BASE_ID) {
+        console.error("searchPersons aborted: missing Airtable credentials.");
+        return [];
+    }
+
+    const sanitizedQuery = trimmedQuery.replace(/"/g, '\\"');
+    const peopleEndpoint = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${encodeURIComponent(PEOPLE_TABLE)}`;
+
+    const filterByFormula = `OR(
+      FIND(LOWER("${sanitizedQuery}"), LOWER({Nombre})),
+      FIND(LOWER("${sanitizedQuery}"), LOWER({Apodo})),
+      FIND(LOWER("${sanitizedQuery}"), LOWER({Email})),
+      FIND(LOWER("${sanitizedQuery}"), LOWER({Celular})),
+      FIND(LOWER("${sanitizedQuery}"), LOWER({Instagram})),
+      FIND(LOWER("${sanitizedQuery}"), LOWER({País}))
+    )`;
+
+    try {
+        const response = await fetch(`${peopleEndpoint}?filterByFormula=${encodeURIComponent(filterByFormula)}`, {
+            headers: {
+                Authorization: `Bearer ${AIRTABLE_API_KEY}`,
+            },
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            console.error("Error searching persons:", data);
+            throw new Error(data?.message || "Error searching persons");
+        }
+
+        return (data?.records ?? []) as AirtableRecordResult[];
+    } catch (error) {
+        console.error("searchPersons error:", error);
+        throw error;
+    }
 };
 
 export const getProfileByQuery = async (query: string): Promise<PersonProfile | null> => {
@@ -164,7 +214,7 @@ export const submitReview = async (reviewData: { personIdentifier: string, nickn
             "Calificación": reviewData.rating,
             "Texto": reviewData.text,
             "Autor Pseudo": reviewData.pseudoAuthor,
-            "Puntaje": score,
+            //"Puntaje": score,
             "Confirmaciones": 0, // Initial confirmations
             "Evidencia": reviewData.evidenceUrl ? [{ url: reviewData.evidenceUrl }] : undefined,
         });
