@@ -1,5 +1,11 @@
 import Airtable from 'airtable';
 import { Review, PersonProfile, UserProfile, ReviewCategory, ReputationLevel, WebCheckResult } from '../types';
+import { CATEGORIES } from '../constants';
+
+const CATEGORY_LABEL_TO_ENUM = Object.entries(CATEGORIES).reduce<Record<string, ReviewCategory>>((acc, [key, value]) => {
+    acc[value.label] = key as ReviewCategory;
+    return acc;
+}, {} as Record<string, ReviewCategory>);
 
 // Initialize Airtable
 const AIRTABLE_API_KEY = import.meta.env.VITE_AIRTABLE_API_KEY as string;
@@ -42,10 +48,13 @@ const fetchReviewsForPerson = async (personRecordId: string): Promise<Review[]> 
         filterByFormula: `{Persona Reseñada} = '${personRecordId}'`
     }).eachPage((records, fetchNextPage) => {
         records.forEach(record => {
+            const rawCategory = record.get('Categoría');
+            const mappedCategory = typeof rawCategory === 'string' ? CATEGORY_LABEL_TO_ENUM[rawCategory] ?? ReviewCategory.Positive : ReviewCategory.Positive;
+
             reviews.push({
                 id: record.id,
                 personReviewed: (record.get('Persona Reseñada Nombre') as string[])[0] || '', // Assuming a lookup field for name
-                category: record.get('Categoría') as ReviewCategory,
+                category: mappedCategory,
                 rating: record.get('Calificación') as string, // Emojis
                 text: record.get('Texto') as string,
                 pseudoAuthor: record.get('Autor Pseudo') as string,
@@ -98,12 +107,13 @@ export const getProfileByQuery = async (query: string): Promise<PersonProfile | 
     return profile;
 };
 
-export const submitReview = async (reviewData: { personIdentifier: string, country: string, category: ReviewCategory, rating: string, text: string, pseudoAuthor: string, evidenceUrl?: string }): Promise<boolean> => {
+export const submitReview = async (reviewData: { personIdentifier: string, nickname?: string, email?: string, phoneNumber?: string, instagram?: string, country: string, category: ReviewCategory, rating: string, text: string, pseudoAuthor: string, evidenceUrl?: string }): Promise<boolean> => {
     console.log("Submitting review:", reviewData);
     try {
         const score = getScoreFromCategory(reviewData.category);
         let personRecordId: string | undefined;
 
+        console.log("Step 1: Checking if person exists...");
         // 1. Check if person exists
         let existingPerson: any;
         await base(PEOPLE_TABLE).select({
@@ -116,21 +126,41 @@ export const submitReview = async (reviewData: { personIdentifier: string, count
             }
             fetchNextPage();
         });
+        console.log("Step 1 Result: personRecordId", personRecordId);
 
         // 2. Create person if not exists
         if (!personRecordId) {
+            console.log("Step 2: Person does not exist, creating new person...");
             const newPersonRecord = await base(PEOPLE_TABLE).create({
                 "Nombre": reviewData.personIdentifier,
                 "País": reviewData.country,
-                // Other identifiers can be added here if provided in reviewData
+                ...(reviewData.nickname && { "Apodo": reviewData.nickname }),
+                ...(reviewData.email && { "Email": reviewData.email }),
+                ...(reviewData.phoneNumber && { "Celular": reviewData.phoneNumber }),
+                ...(reviewData.instagram && { "Instagram": reviewData.instagram }),
             });
             personRecordId = newPersonRecord.id;
+            console.log("Step 2 Result: New person created with ID", personRecordId);
+        } else {
+            console.log("Step 2: Person exists with ID", personRecordId, ". Optionally updating...");
+            // Optionally update existing person with new info if provided
+            const updateFields: any = {};
+            if (reviewData.nickname && !existingPerson.get("Apodo")) updateFields["Apodo"] = reviewData.nickname;
+            if (reviewData.email && !existingPerson.get("Email")) updateFields["Email"] = reviewData.email;
+            if (reviewData.phoneNumber && !existingPerson.get("Celular")) updateFields["Celular"] = reviewData.phoneNumber;
+            if (reviewData.instagram && !existingPerson.get("Instagram")) updateFields["Instagram"] = reviewData.instagram;
+
+            if (Object.keys(updateFields).length > 0) {
+                await base(PEOPLE_TABLE).update(personRecordId, updateFields);
+                console.log("Step 2 Result: Existing person updated.");
+            }
         }
 
+        console.log("Step 3: Creating review...");
         // 3. Create review
         await base(REVIEWS_TABLE).create({
-            "Persona Reseñada": [{ id: personRecordId }],
-            "Categoría": reviewData.category,
+            "Persona Reseñada": [personRecordId],
+            "Categoría": CATEGORIES[reviewData.category].label,
             "Calificación": reviewData.rating,
             "Texto": reviewData.text,
             "Autor Pseudo": reviewData.pseudoAuthor,
@@ -138,6 +168,7 @@ export const submitReview = async (reviewData: { personIdentifier: string, count
             "Confirmaciones": 0, // Initial confirmations
             "Evidencia": reviewData.evidenceUrl ? [{ url: reviewData.evidenceUrl }] : undefined,
         });
+        console.log("Step 3 Result: Review created successfully.");
 
         // Note: Airtable formulas will automatically update 'Puntaje Total', 'Nro de Reseñas', 'Semáforo' in PEOPLE_TABLE
 
@@ -193,10 +224,13 @@ export const getUserProfile = async (pseudoUsername: string): Promise<UserProfil
             sort: [{ field: "Fecha", direction: "desc" }]
         }).eachPage((records, fetchNextPage) => {
             records.forEach(record => {
+                const rawCategory = record.get('Categoría');
+                const mappedCategory = typeof rawCategory === 'string' ? CATEGORY_LABEL_TO_ENUM[rawCategory] ?? ReviewCategory.Positive : ReviewCategory.Positive;
+
                 userReviews.push({
                     id: record.id,
                     personReviewed: (record.get('Persona Reseñada Nombre') as string[])[0] || '',
-                    category: record.get('Categoría') as ReviewCategory,
+                    category: mappedCategory,
                     rating: record.get('Calificación') as string,
                     text: record.get('Texto') as string,
                     pseudoAuthor: record.get('Autor Pseudo') as string,
@@ -233,6 +267,7 @@ export const performWebChecks = async (query: string): Promise<WebCheckResult[]>
 
     const results: WebCheckResult[] = [];
     const normalizedQuery = query.toLowerCase();
+    const hash = Array.from(normalizedQuery).reduce((sum, char) => sum + char.charCodeAt(0), 0);
 
     // Simulate finding different numbers of profiles based on a simple hash of the query
     const facebookProfiles = (hash % 4); // 0 to 3

@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "airtable": "^0.12.2",
+    "openai": "^6.0.0",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "react-router-dom": "^7.9.3"

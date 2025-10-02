@@ -8,6 +8,10 @@ const countryList = ["Argentina", "Bolivia", "Brasil", "Chile", "Colombia", "Ecu
 
 const NewReviewPage: React.FC = () => {
   const [personIdentifier, setPersonIdentifier] = useState('');
+  const [nickname, setNickname] = useState('');
+  const [email, setEmail] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [instagram, setInstagram] = useState('');
   const [country, setCountry] = useState('');
   const [category, setCategory] = useState<ReviewCategory | null>(null);
   const [text, setText] = useState('');
@@ -43,8 +47,6 @@ const NewReviewPage: React.FC = () => {
 
     let evidenceUrl: string | undefined = undefined;
     if (evidence) {
-        // In a real app, you would upload the file to a storage service (S3, Firebase Storage)
-        // and get a URL. For this mock, we convert it to a Base64 data URL.
         try {
             const toBase64 = (file: File) => new Promise<string>((resolve, reject) => {
                 const reader = new FileReader();
@@ -61,12 +63,10 @@ const NewReviewPage: React.FC = () => {
         }
     }
 
-
-    // In a real app, pseudoAuthor would come from a user session
     const pseudoAuthor = `user${Math.floor(Math.random() * 1000)}`;
-    const score = CATEGORIES[category].score;
+    const rating = CATEGORIES[category].emoji;
 
-    const success = await submitReview({ personIdentifier, country, category, text, score, pseudoAuthor, evidenceUrl });
+    const success = await submitReview({ personIdentifier, nickname, email, phoneNumber, instagram, country, category, text, rating, pseudoAuthor, evidenceUrl });
     setIsLoading(false);
 
     if (success) {
@@ -87,16 +87,68 @@ const NewReviewPage: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label htmlFor="identifier" className="block text-sm font-medium text-gray-700 mb-1">
-                Identificador de la persona <span className="text-red-500">*</span>
+                Nombre o Apodo Principal <span className="text-red-500">*</span>
               </label>
               <input
                 id="identifier"
                 type="text"
-                placeholder="Nombre, apodo, @instagram..."
+                placeholder="Nombre, apodo principal..."
                 value={personIdentifier}
                 onChange={(e) => setPersonIdentifier(e.target.value)}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-pink-500 focus:border-pink-500"
                 required
+              />
+            </div>
+            <div>
+              <label htmlFor="nickname" className="block text-sm font-medium text-gray-700 mb-1">
+                Apodo (opcional)
+              </label>
+              <input
+                id="nickname"
+                type="text"
+                placeholder="Apodo secundario..."
+                value={nickname}
+                onChange={(e) => setNickname(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-pink-500 focus:border-pink-500"
+              />
+            </div>
+            <div>
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+                Email (opcional)
+              </label>
+              <input
+                id="email"
+                type="email"
+                placeholder="correo@ejemplo.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-pink-500 focus:border-pink-500"
+              />
+            </div>
+            <div>
+              <label htmlFor="phoneNumber" className="block text-sm font-medium text-gray-700 mb-1">
+                Número de Celular (opcional)
+              </label>
+              <input
+                id="phoneNumber"
+                type="tel"
+                placeholder="+54911..."
+                value={phoneNumber}
+                onChange={(e) => setPhoneNumber(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-pink-500 focus:border-pink-500"
+              />
+            </div>
+            <div>
+              <label htmlFor="instagram" className="block text-sm font-medium text-gray-700 mb-1">
+                Usuario de Instagram (opcional)
+              </label>
+              <input
+                id="instagram"
+                type="text"
+                placeholder="@usuario_instagram"
+                value={instagram}
+                onChange={(e) => setInstagram(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-pink-500 focus:border-pink-500"
               />
             </div>
              <div>
