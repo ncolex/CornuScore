@@ -2,16 +2,18 @@ import React, { useState, useEffect } from 'react';
 import { getUserProfile } from '../services/airtableService';
 import { UserProfile } from '../types';
 import ReviewCard from '../components/ReviewCard';
+import { getPseudoUser } from '../utils/pseudoUser';
 
 const ProfilePage: React.FC = () => {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [pseudoUser] = useState(() => getPseudoUser());
 
   useEffect(() => {
     const fetchProfile = async () => {
       setIsLoading(true);
       try {
-        const userProfileData = await getUserProfile();
+        const userProfileData = await getUserProfile(pseudoUser);
         setProfile(userProfileData);
       } catch (error) {
         console.error("Failed to fetch user profile", error);
@@ -20,7 +22,7 @@ const ProfilePage: React.FC = () => {
       }
     };
     fetchProfile();
-  }, []);
+  }, [pseudoUser]);
 
   if (isLoading) {
     return (
@@ -47,9 +49,10 @@ const ProfilePage: React.FC = () => {
         <i className="fa-solid fa-user-circle text-6xl text-pink-400 mb-4"></i>
         <h1 className="text-3xl font-bold text-gray-800">{profile.pseudoUsername}</h1>
         <p className="text-lg text-gray-600">
-          Puntuación de Contribuidor: 
+          Puntuación de Contribuidor:
           <span className="font-bold text-pink-500 ml-2">{profile.contributionScore}</span>
         </p>
+        <p className="text-sm text-gray-500 mt-2">Comparte reseñas honestas para subir tu reputación en la comunidad.</p>
       </div>
 
       <div>

@@ -13,8 +13,8 @@ const ReputationMeter: React.FC<ReputationMeterProps> = ({ profile }) => {
   const getProgressBarWidth = () => {
     switch (profile.reputation) {
       case 'POSITIVE': return '100%';
-      case 'WARNING': return '50%';
-      case 'RISK': return '15%';
+      case 'WARNING': return '55%';
+      case 'RISK': return '20%';
       default: return '0%';
     }
   };
@@ -44,7 +44,7 @@ const ReputationMeter: React.FC<ReputationMeterProps> = ({ profile }) => {
           style={{ width: getProgressBarWidth() }}
         ></div>
       </div>
-      <p className="text-sm text-gray-500 mt-2">{profile.reviews.length} reseña(s) encontrada(s).</p>
+      <p className="text-sm text-gray-500 mt-2">{profile.reviewCount} reseña(s) encontrada(s).</p>
     </div>
   );
 };

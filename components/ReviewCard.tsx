@@ -34,6 +34,10 @@ const ReviewCard: React.FC<ReviewCardProps> = ({ review }) => {
           <span>{categoryDetails.emoji}</span>
           <span>{categoryDetails.label}</span>
         </div>
+        <div className="flex items-center gap-2">
+          <span className="text-2xl" role="img" aria-label="Calificación emoji">{review.ratingEmoji}</span>
+          <span className="text-xs uppercase tracking-wide text-gray-400">Score</span>
+        </div>
         <span className="text-xs text-gray-500">{new Date(review.date).toLocaleDateString()}</span>
       </div>
       <p className="text-gray-700 mb-4">"{review.text}"</p>

@@ -100,7 +100,7 @@ const ResultsPage: React.FC = () => {
 
       <div>
         <h2 className="text-2xl font-bold text-gray-800 mb-4 text-center">
-          Reseñas de la Comunidad ({profile.reviews.length})
+          Reseñas de la Comunidad ({profile.reviewCount})
         </h2>
         <div className="space-y-4">
           {profile.reviews.map(review => <ReviewCard key={review.id} review={review} />)}

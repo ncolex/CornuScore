@@ -1,270 +1,429 @@
 import Airtable from 'airtable';
-import { Review, PersonProfile, UserProfile, ReviewCategory, ReputationLevel, WebCheckResult } from '../types';
+import {
+  PersonProfile,
+  Review,
+  ReviewCategory,
+  ReputationLevel,
+  UserProfile,
+  WebCheckResult,
+} from '../types';
+import { buildMockDatabase, MockDatabase } from './mockData';
+import { calculateReputationLevel, getScoreFromCategory } from '../utils/reputation';
 
-// Initialize Airtable
-const AIRTABLE_API_KEY = import.meta.env.VITE_AIRTABLE_API_KEY as string;
-const AIRTABLE_BASE_ID = import.meta.env.VITE_AIRTABLE_BASE_ID as string;
+const AIRTABLE_API_KEY = import.meta.env.VITE_AIRTABLE_API_KEY as string | undefined;
+const AIRTABLE_BASE_ID = import.meta.env.VITE_AIRTABLE_BASE_ID as string | undefined;
 
-if (!AIRTABLE_API_KEY || !AIRTABLE_BASE_ID) {
-    console.error("Airtable API Key or Base ID is not set in environment variables.");
-    // Fallback to mock data or throw an error if Airtable is critical
-}
+const isAirtableConfigured = Boolean(AIRTABLE_API_KEY && AIRTABLE_BASE_ID);
 
-const base = new Airtable({ apiKey: AIRTABLE_API_KEY }).base(AIRTABLE_BASE_ID);
+const base = isAirtableConfigured
+  ? new Airtable({ apiKey: AIRTABLE_API_KEY }).base(AIRTABLE_BASE_ID!)
+  : null;
 
 const PEOPLE_TABLE = 'Personas';
 const REVIEWS_TABLE = 'Reseñas';
 
-// Helper to calculate reputation score from category
-const getScoreFromCategory = (category: ReviewCategory): number => {
-    switch (category) {
-        case ReviewCategory.Infidelity: return -3;
-        case ReviewCategory.Theft: return -4;
-        case ReviewCategory.Betrayal: return -3;
-        case ReviewCategory.Toxic: return -2;
-        case ReviewCategory.Positive: return 2;
-        default: return 0;
-    }
+const isBrowser = typeof window !== 'undefined';
+const LOCAL_STORAGE_KEY = 'cornuscore-local-db-v1';
+
+let localDatabase: MockDatabase = (() => {
+  if (!isBrowser) {
+    return buildMockDatabase();
+  }
+
+  const stored = window.localStorage.getItem(LOCAL_STORAGE_KEY);
+  if (!stored) {
+    const seeded = buildMockDatabase();
+    window.localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(seeded));
+    return seeded;
+  }
+
+  try {
+    const parsed = JSON.parse(stored) as MockDatabase;
+    // Deep clone to avoid accidental mutations outside of this module
+    return {
+      people: parsed.people.map((person) => ({
+        ...person,
+        reviews: person.reviews.map((review) => ({ ...review })),
+      })),
+    };
+  } catch (error) {
+    console.warn('No se pudo leer la base local, recreando desde semillas.', error);
+    const seeded = buildMockDatabase();
+    window.localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(seeded));
+    return seeded;
+  }
+})();
+
+const persistLocalDatabase = () => {
+  if (!isBrowser) return;
+  window.localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(localDatabase));
 };
 
-// Helper to calculate reputation level from total score
-const calculateReputationLevel = (score: number, totalReviews: number): ReputationLevel => {
-    if (totalReviews === 0) return ReputationLevel.Unknown;
-    if (score > 0) return ReputationLevel.Positive;
-    if (score >= -5) return ReputationLevel.Warning;
-    return ReputationLevel.Risk;
+const normalize = (value: string) => value.trim().toLowerCase();
+
+const findLocalPersonByQuery = (query: string): PersonProfile | undefined => {
+  const normalizedQuery = normalize(query);
+  return localDatabase.people.find((person) =>
+    person.identifiers.some((identifier) => normalize(identifier) === normalizedQuery),
+  );
 };
 
-// Function to fetch reviews for a given person ID
-const fetchReviewsForPerson = async (personRecordId: string): Promise<Review[]> => {
-    const reviews: Review[] = [];
-    await base(REVIEWS_TABLE).select({
-        filterByFormula: `{Persona Reseñada} = '${personRecordId}'`
-    }).eachPage((records, fetchNextPage) => {
-        records.forEach(record => {
-            reviews.push({
-                id: record.id,
-                personReviewed: (record.get('Persona Reseñada Nombre') as string[])[0] || '', // Assuming a lookup field for name
-                category: record.get('Categoría') as ReviewCategory,
-                rating: record.get('Calificación') as string, // Emojis
-                text: record.get('Texto') as string,
-                pseudoAuthor: record.get('Autor Pseudo') as string,
-                date: record.get('Fecha') as string,
-                confirmations: record.get('Confirmaciones') as number || 0,
-                evidenceUrl: record.get('Evidencia') ? (record.get('Evidencia') as any[])[0]?.url : undefined,
-                score: record.get('Puntaje') as number, // Assuming Puntaje is a formula field in Airtable
-            });
-        });
-        fetchNextPage();
-    });
-    return reviews;
+const updateLocalPersonMetrics = (person: PersonProfile) => {
+  person.totalScore = person.reviews.reduce((sum, review) => sum + review.score, 0);
+  person.reviewCount = person.reviews.length;
+  person.reputation = calculateReputationLevel(person.totalScore, person.reviewCount);
 };
+
+const hashString = (value: string) => {
+  let hash = 0;
+  for (let i = 0; i < value.length; i += 1) {
+    hash = (hash << 5) - hash + value.charCodeAt(i);
+    hash |= 0; // Convert to 32bit integer
+  }
+  return Math.abs(hash);
+};
+
+const mapAirtableReview = (record: Airtable.Record<any>): Review => ({
+  id: record.id,
+  category: record.get('Categoría') as ReviewCategory,
+  ratingEmoji: (record.get('Calificación') as string) || '🤔',
+  text: (record.get('Texto') as string) || '',
+  pseudoAuthor: (record.get('Autor Pseudo') as string) || 'anon',
+  date: (record.get('Fecha') as string) || new Date().toISOString(),
+  confirmations: (record.get('Confirmaciones') as number) || 0,
+  evidenceUrl: record.get('Evidencia') ? (record.get('Evidencia') as any[])[0]?.url : undefined,
+  score: (record.get('Puntaje') as number) ?? getScoreFromCategory(record.get('Categoría') as ReviewCategory),
+  personReviewed: ((record.get('Persona Reseñada Nombre') as string[]) || [])[0],
+});
 
 export const getProfileByQuery = async (query: string): Promise<PersonProfile | null> => {
-    console.log(`Searching for: ${query}`);
-    const normalizedQuery = query.toLowerCase().trim();
-    let profile: PersonProfile | null = null;
+  if (!query) return null;
 
-    try {
-        await base(PEOPLE_TABLE).select({
-            filterByFormula: `OR(LOWER(Nombre) = '${normalizedQuery}', LOWER(Instagram) = '${normalizedQuery}', LOWER(Celular) = '${normalizedQuery}', LOWER(Email) = '${normalizedQuery}')`,
-            maxRecords: 1,
-        }).eachPage((records, fetchNextPage) => {
-            if (records.length > 0) {
-                const record = records[0];
-                const totalScore = record.get('Puntaje Total') as number || 0;
-                const totalReviews = record.get('Nro de Reseñas') as number || 0;
+  if (!isAirtableConfigured || !base) {
+    const person = findLocalPersonByQuery(query);
+    return person ? { ...person, reviews: person.reviews.map((review) => ({ ...review })) } : null;
+  }
 
-                profile = {
-                    id: record.id,
-                    identifiers: [record.get('Nombre') as string], // Main identifier
-                    country: record.get('País') as string,
-                    totalScore: totalScore,
-                    reputation: calculateReputationLevel(totalScore, totalReviews),
-                    reviews: [], // Will be fetched separately
-                };
-            }
-            fetchNextPage();
-        });
+  let profile: PersonProfile | null = null;
 
-        if (profile) {
-            profile.reviews = await fetchReviewsForPerson(profile.id);
-        }
+  await base(PEOPLE_TABLE)
+    .select({
+      filterByFormula:
+        `OR(LOWER(Nombre) = '${normalize(query)}', LOWER(Instagram) = '${normalize(query)}', LOWER(Celular) = '${normalize(query)}', LOWER(Email) = '${normalize(query)}')`,
+      maxRecords: 1,
+    })
+    .eachPage((records, fetchNextPage) => {
+      if (records.length > 0) {
+        const record = records[0];
+        const totalScore = (record.get('Puntaje Total') as number) || 0;
+        const totalReviews = (record.get('Nro de Reseñas') as number) || 0;
 
-    } catch (error) {
-        console.error("Error fetching profile from Airtable:", error);
-    }
+        profile = {
+          id: record.id,
+          identifiers: [record.get('Nombre') as string],
+          country: (record.get('País') as string) || 'Desconocido',
+          totalScore,
+          reputation: calculateReputationLevel(totalScore, totalReviews),
+          reviewCount: totalReviews,
+          reviews: [],
+        };
+      }
+      fetchNextPage();
+    });
 
-    return profile;
+  if (!profile) {
+    return null;
+  }
+
+  const reviews: Review[] = [];
+
+  await base(REVIEWS_TABLE)
+    .select({
+      filterByFormula: `{Persona Reseñada} = '${profile.id}'`,
+      sort: [{ field: 'Fecha', direction: 'desc' }],
+    })
+    .eachPage((records, fetchNextPage) => {
+      records.forEach((record) => {
+        reviews.push(mapAirtableReview(record));
+      });
+      fetchNextPage();
+    });
+
+  profile.reviews = reviews;
+  profile.reviewCount = reviews.length;
+  profile.totalScore = reviews.reduce((sum, review) => sum + review.score, 0);
+  profile.reputation = calculateReputationLevel(profile.totalScore, profile.reviewCount);
+
+  return profile;
 };
 
-export const submitReview = async (reviewData: { personIdentifier: string, country: string, category: ReviewCategory, rating: string, text: string, pseudoAuthor: string, evidenceUrl?: string }): Promise<boolean> => {
-    console.log("Submitting review:", reviewData);
-    try {
-        const score = getScoreFromCategory(reviewData.category);
-        let personRecordId: string | undefined;
+export const submitReview = async (reviewData: {
+  personIdentifier: string;
+  country: string;
+  category: ReviewCategory;
+  ratingEmoji: string;
+  text: string;
+  pseudoAuthor: string;
+  evidenceUrl?: string;
+}): Promise<boolean> => {
+  if (!reviewData.personIdentifier) return false;
 
-        // 1. Check if person exists
-        let existingPerson: any;
-        await base(PEOPLE_TABLE).select({
-            filterByFormula: `LOWER(Nombre) = '${reviewData.personIdentifier.toLowerCase()}'`,
-            maxRecords: 1,
-        }).eachPage((records, fetchNextPage) => {
-            if (records.length > 0) {
-                existingPerson = records[0];
-                personRecordId = existingPerson.id;
-            }
-            fetchNextPage();
-        });
+  const score = getScoreFromCategory(reviewData.category);
 
-        // 2. Create person if not exists
-        if (!personRecordId) {
-            const newPersonRecord = await base(PEOPLE_TABLE).create({
-                "Nombre": reviewData.personIdentifier,
-                "País": reviewData.country,
-                // Other identifiers can be added here if provided in reviewData
-            });
-            personRecordId = newPersonRecord.id;
-        }
+  if (!isAirtableConfigured || !base) {
+    const existingPerson = findLocalPersonByQuery(reviewData.personIdentifier);
 
-        // 3. Create review
-        await base(REVIEWS_TABLE).create({
-            "Persona Reseñada": [{ id: personRecordId }],
-            "Categoría": reviewData.category,
-            "Calificación": reviewData.rating,
-            "Texto": reviewData.text,
-            "Autor Pseudo": reviewData.pseudoAuthor,
-            "Puntaje": score,
-            "Confirmaciones": 0, // Initial confirmations
-            "Evidencia": reviewData.evidenceUrl ? [{ url: reviewData.evidenceUrl }] : undefined,
-        });
+    const ensurePerson = (): PersonProfile => {
+      if (existingPerson) {
+        return existingPerson;
+      }
 
-        // Note: Airtable formulas will automatically update 'Puntaje Total', 'Nro de Reseñas', 'Semáforo' in PEOPLE_TABLE
+      const newPerson: PersonProfile = {
+        id: `local-${Date.now()}`,
+        identifiers: [reviewData.personIdentifier],
+        country: reviewData.country,
+        totalScore: 0,
+        reputation: calculateReputationLevel(0, 0),
+        reviewCount: 0,
+        reviews: [],
+      };
 
-        return true;
-    } catch (error) {
-        console.error("Error submitting review to Airtable:", error);
-        return false;
+      localDatabase.people.push(newPerson);
+      return newPerson;
+    };
+
+    const person = ensurePerson();
+
+    if (!person.identifiers.includes(reviewData.personIdentifier)) {
+      person.identifiers.push(reviewData.personIdentifier);
     }
+
+    const review: Review = {
+      id: `local-review-${Date.now()}`,
+      category: reviewData.category,
+      ratingEmoji: reviewData.ratingEmoji,
+      text: reviewData.text,
+      pseudoAuthor: reviewData.pseudoAuthor,
+      date: new Date().toISOString(),
+      confirmations: 0,
+      evidenceUrl: reviewData.evidenceUrl,
+      score,
+      personReviewed: person.identifiers[0],
+    };
+
+    person.reviews.unshift(review);
+    updateLocalPersonMetrics(person);
+    persistLocalDatabase();
+    return true;
+  }
+
+  try {
+    let personRecordId: string | undefined;
+
+    await base(PEOPLE_TABLE)
+      .select({
+        filterByFormula: `LOWER(Nombre) = '${normalize(reviewData.personIdentifier)}'`,
+        maxRecords: 1,
+      })
+      .eachPage((records, fetchNextPage) => {
+        if (records.length > 0) {
+          personRecordId = records[0].id;
+        }
+        fetchNextPage();
+      });
+
+    if (!personRecordId) {
+      const newPerson = await base(PEOPLE_TABLE).create({
+        Nombre: reviewData.personIdentifier,
+        País: reviewData.country,
+      });
+      personRecordId = newPerson.id;
+    }
+
+    await base(REVIEWS_TABLE).create({
+      'Persona Reseñada': [{ id: personRecordId }],
+      Categoría: reviewData.category,
+      Calificación: reviewData.ratingEmoji,
+      Texto: reviewData.text,
+      'Autor Pseudo': reviewData.pseudoAuthor,
+      Puntaje: score,
+      Confirmaciones: 0,
+      Evidencia: reviewData.evidenceUrl ? [{ url: reviewData.evidenceUrl }] : undefined,
+    });
+
+    return true;
+  } catch (error) {
+    console.error('Error submitting review to Airtable:', error);
+    return false;
+  }
 };
 
-export const getRankings = async (): Promise<{ topNegative: PersonProfile[], topPositive: PersonProfile[] }> => {
-    console.log("Fetching rankings");
-    const allProfiles: PersonProfile[] = [];
+export const getRankings = async (): Promise<{ topNegative: PersonProfile[]; topPositive: PersonProfile[] }> => {
+  if (!isAirtableConfigured || !base) {
+    const sorted = [...localDatabase.people].sort((a, b) => a.totalScore - b.totalScore);
+    const topNegative = sorted
+      .filter((person) => person.reputation !== ReputationLevel.Positive)
+      .slice(0, 5);
+    const topPositive = [...localDatabase.people]
+      .filter((person) => person.reputation === ReputationLevel.Positive)
+      .sort((a, b) => b.totalScore - a.totalScore)
+      .slice(0, 5);
 
-    try {
-        await base(PEOPLE_TABLE).select({
-            sort: [{ field: "Puntaje Total", direction: "asc" }] // Sort by score for ranking
-        }).eachPage((records, fetchNextPage) => {
-            records.forEach(record => {
-                const totalScore = record.get('Puntaje Total') as number || 0;
-                const totalReviews = record.get('Nro de Reseñas') as number || 0;
-                allProfiles.push({
-                    id: record.id,
-                    identifiers: [record.get('Nombre') as string],
-                    country: record.get('País') as string,
-                    totalScore: totalScore,
-                    reputation: calculateReputationLevel(totalScore, totalReviews),
-                    reviews: [], // Not needed for ranking display
-                });
-            });
-            fetchNextPage();
+    return {
+      topNegative: topNegative.map((person) => ({
+        ...person,
+        identifiers: [...person.identifiers],
+        reviews: [],
+      })),
+      topPositive: topPositive.map((person) => ({
+        ...person,
+        identifiers: [...person.identifiers],
+        reviews: [],
+      })),
+    };
+  }
+
+  const profiles: PersonProfile[] = [];
+
+  await base(PEOPLE_TABLE)
+    .select({
+      sort: [{ field: 'Puntaje Total', direction: 'asc' }],
+    })
+    .eachPage((records, fetchNextPage) => {
+      records.forEach((record) => {
+        const totalScore = (record.get('Puntaje Total') as number) || 0;
+        const reviewCount = (record.get('Nro de Reseñas') as number) || 0;
+
+        profiles.push({
+          id: record.id,
+          identifiers: [record.get('Nombre') as string],
+          country: (record.get('País') as string) || 'Desconocido',
+          totalScore,
+          reputation: calculateReputationLevel(totalScore, reviewCount),
+          reviewCount,
+          reviews: [],
         });
+      });
+      fetchNextPage();
+    });
 
-        const topNegative = allProfiles.filter(p => p.reputation === ReputationLevel.Risk || p.reputation === ReputationLevel.Warning).slice(0, 5);
-        const topPositive = allProfiles.filter(p => p.reputation === ReputationLevel.Positive).slice(0, 5);
+  const topNegative = profiles
+    .filter((profile) => profile.reputation !== ReputationLevel.Positive)
+    .slice(0, 5);
+  const topPositive = profiles
+    .filter((profile) => profile.reputation === ReputationLevel.Positive)
+    .sort((a, b) => b.totalScore - a.totalScore)
+    .slice(0, 5);
 
-        return { topNegative, topPositive };
-
-    } catch (error) {
-        console.error("Error fetching rankings from Airtable:", error);
-        return { topNegative: [], topPositive: [] };
-    }
+  return { topNegative, topPositive };
 };
 
 export const getUserProfile = async (pseudoUsername: string): Promise<UserProfile | null> => {
-    console.log(`Fetching user profile for: ${pseudoUsername}`);
-    const userReviews: Review[] = [];
-    let userProfile: UserProfile | null = null;
+  if (!pseudoUsername) return null;
 
-    try {
-        await base(REVIEWS_TABLE).select({
-            filterByFormula: `{Autor Pseudo} = '${pseudoUsername}'`,
-            sort: [{ field: "Fecha", direction: "desc" }]
-        }).eachPage((records, fetchNextPage) => {
-            records.forEach(record => {
-                userReviews.push({
-                    id: record.id,
-                    personReviewed: (record.get('Persona Reseñada Nombre') as string[])[0] || '',
-                    category: record.get('Categoría') as ReviewCategory,
-                    rating: record.get('Calificación') as string,
-                    text: record.get('Texto') as string,
-                    pseudoAuthor: record.get('Autor Pseudo') as string,
-                    date: record.get('Fecha') as string,
-                    confirmations: record.get('Confirmaciones') as number || 0,
-                    evidenceUrl: record.get('Evidencia') ? (record.get('Evidencia') as any[])[0]?.url : undefined,
-                    score: record.get('Puntaje') as number,
-                });
-            });
-            fetchNextPage();
-        });
+  if (!isAirtableConfigured || !base) {
+    const reviews: Review[] = [];
 
-        // Mock contribution score for now, as Airtable doesn't track user scores directly
-        if (userReviews.length > 0) {
-            userProfile = {
-                id: pseudoUsername, // Using pseudoUsername as ID for mock
-                pseudoUsername: pseudoUsername,
-                contributionScore: userReviews.reduce((sum, review) => sum + review.score, 0) + (userReviews.length * 5), // Simple mock score
-                reviews: userReviews,
-            };
+    localDatabase.people.forEach((person) => {
+      person.reviews.forEach((review) => {
+        if (normalize(review.pseudoAuthor) === normalize(pseudoUsername)) {
+          reviews.push({ ...review, personReviewed: person.identifiers[0] });
         }
-
-    } catch (error) {
-        console.error("Error fetching user profile from Airtable:", error);
-    }
-
-    return userProfile;
-};
-
-
-export const performWebChecks = async (query: string): Promise<WebCheckResult[]> => {
-    console.log(`Performing web check for: ${query}`);
-    await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate a longer delay for web scraping/API calls
-
-    const results: WebCheckResult[] = [];
-    const normalizedQuery = query.toLowerCase();
-
-    // Simulate finding different numbers of profiles based on a simple hash of the query
-    const facebookProfiles = (hash % 4); // 0 to 3
-    const tinderProfiles = (hash % 2); // 0 or 1
-
-    if (facebookProfiles > 0) {
-        results.push({
-            id: `web-fb-${hash}`,
-            source: 'Facebook',
-            title: `Se encontraron ${facebookProfiles} perfiles públicos en Facebook`,
-            link: `https://www.facebook.com/search/top/?q=${encodeURIComponent(query)}`,
-            snippet: `Se encontraron perfiles que podrían coincidir con "${query}". Se recomienda verificar manualmente.`
-        });
-    }
-
-    if (tinderProfiles > 0) {
-        results.push({
-            id: `web-tinder-${hash}`,
-            source: 'Tinder',
-            title: `Posible perfil encontrado en apps de citas`,
-            link: `#`, // Tinder doesn't have public searchable profiles
-            snippet: `Nuestra búsqueda indica una posible presencia en aplicaciones de citas. No se puede mostrar un enlace directo por privacidad.`
-        });
-    }
-    
-     results.push({
-        id: `web-google-${hash}`,
-        source: 'Google',
-        title: `Buscar "${query}" en Google`,
-        link: `https://www.google.com/search?q=${encodeURIComponent(query)}`,
-        snippet: `Realiza una búsqueda general en Google para encontrar más información pública y en otras redes sociales.`
+      });
     });
 
-    return results;
+    if (reviews.length === 0) {
+      return {
+        id: pseudoUsername,
+        pseudoUsername,
+        contributionScore: 0,
+        reviews: [],
+      };
+    }
+
+    const contributionScore = reviews.reduce((sum, review) => sum + review.score, 0) + reviews.length * 5;
+
+    return {
+      id: pseudoUsername,
+      pseudoUsername,
+      contributionScore,
+      reviews,
+    };
+  }
+
+  const userReviews: Review[] = [];
+
+  await base(REVIEWS_TABLE)
+    .select({
+      filterByFormula: `{Autor Pseudo} = '${pseudoUsername}'`,
+      sort: [{ field: 'Fecha', direction: 'desc' }],
+    })
+    .eachPage((records, fetchNextPage) => {
+      records.forEach((record) => {
+        userReviews.push(mapAirtableReview(record));
+      });
+      fetchNextPage();
+    });
+
+  if (userReviews.length === 0) {
+    return {
+      id: pseudoUsername,
+      pseudoUsername,
+      contributionScore: 0,
+      reviews: [],
+    };
+  }
+
+  const contributionScore = userReviews.reduce((sum, review) => sum + review.score, 0) + userReviews.length * 5;
+
+  return {
+    id: pseudoUsername,
+    pseudoUsername,
+    contributionScore,
+    reviews: userReviews,
+  };
+};
+
+export const performWebChecks = async (query: string): Promise<WebCheckResult[]> => {
+  if (!query) return [];
+
+  const normalizedQuery = query.trim();
+  await new Promise((resolve) => setTimeout(resolve, 1200));
+
+  const hash = hashString(normalizedQuery.toLowerCase());
+
+  const facebookProfiles = hash % 4;
+  const tinderProfiles = hash % 2;
+
+  const results: WebCheckResult[] = [];
+
+  if (facebookProfiles > 0) {
+    results.push({
+      id: `web-fb-${hash}`,
+      source: 'Facebook',
+      title: `Se encontraron ${facebookProfiles} perfil(es) públicos en Facebook`,
+      link: `https://www.facebook.com/search/top/?q=${encodeURIComponent(normalizedQuery)}`,
+      snippet: `Existen resultados que podrían coincidir con "${normalizedQuery}". Revisa manualmente antes de confiar.`,
+    });
+  }
+
+  if (tinderProfiles > 0) {
+    results.push({
+      id: `web-tinder-${hash}`,
+      source: 'Tinder',
+      title: 'Posible aparición en apps de citas',
+      link: '#',
+      snippet: 'Detectamos actividad en apps de citas. No se muestra enlace directo por políticas de privacidad.',
+    });
+  }
+
+  results.push({
+    id: `web-google-${hash}`,
+    source: 'Google',
+    title: `Buscar "${normalizedQuery}" en Google`,
+    link: `https://www.google.com/search?q=${encodeURIComponent(normalizedQuery)}`,
+    snippet: 'Realiza una búsqueda manual para complementar la información con otras fuentes públicas.',
+  });
+
+  return results;
 };
