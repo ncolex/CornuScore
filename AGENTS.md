@@ -1,19 +1,19 @@
 # Repository Guidelines
 
 ## Project Structure & Module Organization
-The Vite + React front end lives at the repository root. Routing starts in `index.tsx` and `App.tsx`, with reusable UI in `components/` and route-level screens in `pages/`. Cross-cutting types and constants reside in `types.ts` and `constants.ts`. Airtable integrations are isolated under `services/`, while static assets flow through standard Vite public imports. Scenario data used for evaluations sits in `eval/`; avoid bundling it into production builds.
+The Vite + React client lives at the repo root. `index.tsx` mounts `App.tsx`, which wires routing and top-level providers. UI building blocks sit in `components/`, route screens in `pages/`, and shared tokens in `constants.ts` and `types.ts`. Airtable integrations stay isolated under `services/`, while shared styling is in `index.css`. Static CSV datasets such as `personas.csv` remain at the top level; treat them as dev-only inputs and keep them out of production bundles.
 
 ## Build, Test, and Development Commands
-Run `npm install` once per environment. Use `npm run dev` for the local development server, and `npm run build` to generate the production bundle in `dist/`. `npm run preview` serves the built bundle for smoke testing prior to deploying.
+Run `npm install` once per machine. `npm run dev` starts the Vite dev server with hot reload. `npm run build` creates the production bundle in `dist/`, and `npm run preview` serves that bundle for smoke tests before deploying.
 
 ## Coding Style & Naming Conventions
-Follow the existing TypeScript + JSX style: two-space indentation, single quotes, and named exports for composable modules. Co-locate component styles via Tailwind utility classes inside the JSX and keep shared styling in `index.css`. Name React components in PascalCase (`ReviewCard.tsx`), hooks in camelCase, and Vite environment variables with the `VITE_` prefix.
+Author components in TypeScript + JSX with two-space indentation and single quotes. Export reusable modules by name, keep React components in PascalCase (`ReviewCard.tsx`), hooks in camelCase, and Vite env vars prefixed with `VITE_`. Compose styling with Tailwind utility classes inline; only place shared styles in `index.css`. Align new code with existing ESLint and TypeScript configurations.
 
 ## Testing Guidelines
-There is no bundled test runner today, so manual verification via `npm run dev` is expected. When introducing automated coverage, align with Vitest + React Testing Library, place specs alongside the source as `*.test.tsx`, and mock Airtable calls via thin service abstractions. Capture edge cases around reputation scoring and Airtable fallbacks before merging.
+No automated suite ships today, so validate UI flows via `npm run dev`. When adding tests, use Vitest with React Testing Library, colocate specs as `*.test.tsx`, and mock Airtable access through the service layer. Prioritize edge cases around reputation scoring, localization, and offline fallbacks.
 
 ## Commit & Pull Request Guidelines
-Existing history is sparse; standardize on short, imperative commit subjects (e.g., `Add ranking badge styles`). Include context-rich bodies when touching Airtable schema or data contracts. Pull requests should state the problem, summarize the solution, list verification steps (`npm run dev`, screenshots of UI changes), and link any tracking issues. Request review from a maintainer familiar with the affected module.
+Write short, imperative commit subjects (e.g., `Add ranking badge styles`) and include explanatory bodies when touching Airtable contracts. Pull requests must state the problem, outline the solution, list verification steps (`npm run dev`, screenshots for UI changes), and link tracking issues or documents. Request review from a maintainer familiar with the touched module before merging.
 
-## Configuration & Secrets
-Copy `.env.local` from the provided template and define `GEMINI_API_KEY`, `VITE_AIRTABLE_API_KEY`, and `VITE_AIRTABLE_BASE_ID`. Never commit secret values; rely on environment-specific storage. For local debug without Airtable access, guard new calls behind environment checks to preserve offline workflows.
+## Security & Configuration Tips
+Copy `.env.local` from the template and define `GEMINI_API_KEY`, `VITE_AIRTABLE_API_KEY`, and `VITE_AIRTABLE_BASE_ID` locally. Never commit secret values. Guard new Airtable calls with environment checks so local development works without credentials.

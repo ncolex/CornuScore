@@ -33,6 +33,8 @@ export interface PersonProfile {
   totalScore: number;
   reputation: ReputationLevel;
   reviews: Review[];
+  reviewsCount: number;
+  semaforoEmoji?: string;
 }
 
 export interface UserProfile {

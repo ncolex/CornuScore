@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { getRankings } from '../services/airtableService';
 import { PersonProfile } from '../types';
-import { REPUTATION_LEVELS } from '../constants';
+import { REPUTATION_LEVELS, countryFlagEmoji } from '../constants';
 
 const RankingCard: React.FC<{ profile: PersonProfile; rank: number }> = ({ profile, rank }) => {
   const reputationDetails = REPUTATION_LEVELS[profile.reputation];
@@ -12,8 +12,12 @@ const RankingCard: React.FC<{ profile: PersonProfile; rank: number }> = ({ profi
       <div className="bg-white/80 backdrop-blur-sm p-4 rounded-xl shadow-md border border-white/30 flex items-center gap-4 hover:shadow-lg hover:border-pink-300 transition-all transform hover:scale-105">
         <span className={`text-2xl font-bold w-10 text-center ${reputationDetails.color}`}>#{rank}</span>
         <div className="flex-grow">
-          <p className="font-bold text-lg text-gray-800 capitalize">{profile.identifiers[0]}</p>
-          <p className="text-sm text-gray-500">{profile.reviews.length} reseñas</p>
+          <p className="font-bold text-lg text-gray-800 capitalize flex items-center gap-2">
+            {profile.semaforoEmoji && <span>{profile.semaforoEmoji}</span>}
+            <span>{profile.identifiers[0]}</span>
+            <span title={profile.country} aria-label={profile.country}>{countryFlagEmoji(profile.country)}</span>
+          </p>
+          <p className="text-sm text-gray-500">{profile.reviewsCount} reseñas</p>
         </div>
         <i className={`${reputationDetails.icon} text-3xl ${reputationDetails.color}`}></i>
       </div>

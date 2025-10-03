@@ -1,7 +1,7 @@
 // Fix: Create the ResultsPage component to display search results.
 import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
-import { getProfileByQuery, performWebChecks } from '../services/airtableService';
+import { useParams, Link, useLocation } from 'react-router-dom';
+import { searchProfilesByQuery, performWebChecks } from '../services/airtableService';
 import { PersonProfile, WebCheckResult } from '../types';
 import ReputationMeter from '../components/ReputationMeter';
 import ReviewCard from '../components/ReviewCard';
@@ -10,7 +10,10 @@ import WebCheckTile from '../components/WebCheckTile';
 
 const ResultsPage: React.FC = () => {
   const { query } = useParams<{ query: string }>();
-  const [profile, setProfile] = useState<PersonProfile | null>(null);
+  const location = useLocation();
+  const params = new URLSearchParams(location.search);
+  const selectedCountry = params.get('country') || '';
+  const [profiles, setProfiles] = useState<PersonProfile[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [webResults, setWebResults] = useState<WebCheckResult[]>([]);
   const [isWebLoading, setIsWebLoading] = useState(true);
@@ -23,11 +26,11 @@ const ResultsPage: React.FC = () => {
       setIsWebLoading(true);
       
       // Fire both requests in parallel for better performance
-      const profilePromise = getProfileByQuery(query);
+      const profilePromise = searchProfilesByQuery(query, 5, selectedCountry || undefined);
       const webPromise = performWebChecks(query);
       
       const profileData = await profilePromise;
-      setProfile(profileData);
+      setProfiles(profileData);
       setIsLoading(false);
       
       const webData = await webPromise;
@@ -73,8 +76,8 @@ const ResultsPage: React.FC = () => {
       </div>
   );
 
-  // Profile not found view
-  if (!profile) {
+  // No internal results
+  if (!profiles || profiles.length === 0) {
     return (
       <div className="max-w-3xl mx-auto space-y-8">
         <div className="text-center bg-white/80 p-8 rounded-2xl shadow-lg">
@@ -93,19 +96,32 @@ const ResultsPage: React.FC = () => {
     );
   }
 
-  // Profile found view
+  // Internal results view
   return (
     <div className="max-w-3xl mx-auto space-y-8">
-      <ReputationMeter profile={profile} />
-
-      <div>
-        <h2 className="text-2xl font-bold text-gray-800 mb-4 text-center">
-          Reseñas de la Comunidad ({profile.reviews.length})
-        </h2>
-        <div className="space-y-4">
-          {profile.reviews.map(review => <ReviewCard key={review.id} review={review} />)}
+      {profiles.map((profile) => (
+        <div key={profile.id} className="space-y-6">
+          <ReputationMeter profile={profile} />
+          <div className="flex justify-end">
+            <Link
+              to="/review"
+              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-pink-500 rounded-full shadow hover:bg-pink-600"
+            >
+              <i className="fa-solid fa-flag"></i> Reportar
+            </Link>
+          </div>
+          <div>
+            <h2 className="text-2xl font-bold text-gray-800 mb-4 text-center">
+              Reseñas de la Comunidad ({profile.reviewsCount})
+            </h2>
+            <div className="space-y-4">
+              {profile.reviews.map((review) => (
+                <ReviewCard key={review.id} review={review} />
+              ))}
+            </div>
+          </div>
         </div>
-      </div>
+      ))}
       
       <WebPresenceContent />
     </div>

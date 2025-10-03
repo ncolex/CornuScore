@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { PersonProfile } from '../types';
-import { REPUTATION_LEVELS } from '../constants';
+import { REPUTATION_LEVELS, countryFlagEmoji } from '../constants';
 
 interface ReputationMeterProps {
   profile: PersonProfile;
@@ -22,7 +22,12 @@ const ReputationMeter: React.FC<ReputationMeterProps> = ({ profile }) => {
   return (
     <div className="bg-white/80 backdrop-blur-sm p-6 rounded-2xl shadow-lg border border-white/30 text-center">
       <h2 className="text-xl font-bold text-gray-800 mb-1">Reputación de</h2>
-      <p className="text-2xl font-bold text-pink-500 mb-1 capitalize">{profile.identifiers[0]}</p>
+      <p className="text-2xl font-bold text-pink-500 mb-1 capitalize flex items-center gap-2 justify-center">
+        <span>{profile.identifiers[0]}</span>
+        <span title={profile.country} aria-label={profile.country} className="text-xl">
+          {countryFlagEmoji(profile.country)}
+        </span>
+      </p>
       <p className="text-sm text-gray-500 mb-4 flex items-center justify-center gap-1">
         <i className="fa-solid fa-location-dot"></i>
         {profile.country}
@@ -34,7 +39,10 @@ const ReputationMeter: React.FC<ReputationMeterProps> = ({ profile }) => {
         </div>
         <div>
           <p className="text-lg font-semibold text-gray-700">Resultado:</p>
-          <p className={`text-3xl font-bold ${reputationDetails.color}`}>{reputationDetails.label}</p>
+          <p className={`text-3xl font-bold ${reputationDetails.color} flex items-center gap-2`}>
+            {profile.semaforoEmoji && <span>{profile.semaforoEmoji}</span>}
+            <span>{reputationDetails.label}</span>
+          </p>
         </div>
       </div>
 
@@ -44,7 +52,7 @@ const ReputationMeter: React.FC<ReputationMeterProps> = ({ profile }) => {
           style={{ width: getProgressBarWidth() }}
         ></div>
       </div>
-      <p className="text-sm text-gray-500 mt-2">{profile.reviews.length} reseña(s) encontrada(s).</p>
+      <p className="text-sm text-gray-500 mt-2">{profile.reviewsCount} reseña(s).</p>
     </div>
   );
 };
