@@ -27,6 +27,9 @@ const REVIEWER_PHONE_FIELD_CANDIDATES = ['Teléfono', 'Telefono', 'Celular'];
 const REVIEW_LINK_FIELD_CANDIDATES = ['Reseñador', 'Resenador', 'Autor', 'Usuario'];
 const IMGUR_CLIENT_ID = import.meta.env.VITE_IMGUR_CLIENT_ID as string | undefined;
 const UPLOAD_ENDPOINT = (import.meta as any).env?.VITE_UPLOAD_ENDPOINT || '/.netlify/functions/upload-image';
+const REVIEW_AUTHOR_FIELD = ((import.meta as any).env?.VITE_REVIEW_AUTHOR_FIELD as string | undefined) || 'Autor Pseudo';
+const REVIEW_LINK_FIELD_FIXED = (import.meta as any).env?.VITE_REVIEW_LINK_FIELD as string | undefined;
+const REVIEWERS_TABLE_FIXED = (import.meta as any).env?.VITE_REVIEWERS_TABLE as string | undefined;
 
 type RatingMode = 'emoji' | 'label' | 'omit';
 
@@ -97,10 +100,10 @@ function writeToLS(key: string, value: string) {
 let reporterPhoneFieldSupported = readReporterPhoneSupport();
 let ratingMode: RatingMode | null = readRatingMode();
 let reporterPhoneFieldName: string | null = readReporterPhoneFieldName();
-let reviewerTableName: string | null = null;
+let reviewerTableName: string | null = REVIEWERS_TABLE_FIXED ?? null;
 let reviewerNameField: string | null = null;
 let reviewerPhoneField: string | null = null;
-let reviewLinkField: string | null = null;
+let reviewLinkField: string | null = REVIEW_LINK_FIELD_FIXED ?? null;
 
 interface AirtableRecord<TFields> {
   id: string;
@@ -527,7 +530,7 @@ export async function submitReview(
       'Persona Reseñada': [personRecord.id],
       'Categoría': CATEGORIES[payload.category].label,
       'Texto': payload.text,
-      'Autor Pseudo': payload.reporterName.trim(),
+      [REVIEW_AUTHOR_FIELD]: payload.reporterName.trim(),
       'Confirmaciones': 0,
     };
 
@@ -543,10 +546,9 @@ export async function submitReview(
       reviewFields['Evidencia Base64'] = inlineBase64;
     }
 
-    // Try to link reviewer if we found/created it
-    if (reviewerRecordId) {
-      const linkName = reviewLinkField ?? REVIEW_LINK_FIELD_CANDIDATES[0];
-      reviewFields[linkName] = [reviewerRecordId];
+    // Try to link reviewer only if a known link field name is configured
+    if (reviewerRecordId && reviewLinkField) {
+      reviewFields[reviewLinkField] = [reviewerRecordId];
     }
 
     const reviewUrl = buildTableUrl(REVIEWS_TABLE);
@@ -616,22 +618,12 @@ export async function submitReview(
               continue;
             }
           }
-          // Also handle unknown reviewer link field name
-          const usedReviewerLink = REVIEW_LINK_FIELD_CANDIDATES.find((n) => n in fieldsForRequest);
-          if (usedReviewerLink) {
-            const idx = REVIEW_LINK_FIELD_CANDIDATES.indexOf(usedReviewerLink);
-            if (idx >= 0 && idx + 1 < REVIEW_LINK_FIELD_CANDIDATES.length) {
-              const next = REVIEW_LINK_FIELD_CANDIDATES[idx + 1];
-              const val = (fieldsForRequest as Record<string, unknown>)[usedReviewerLink];
-              delete (fieldsForRequest as Record<string, unknown>)[usedReviewerLink];
-              (fieldsForRequest as Record<string, unknown>)[next] = val;
-              console.warn(`Retrying with alternate reviewer link field "${next}".`);
-              continue;
-            } else {
-              delete (fieldsForRequest as Record<string, unknown>)[usedReviewerLink];
-              console.warn('Reviewer link field not present. Proceeding without link.');
-              continue;
-            }
+          // If unknown field error occurs for a reviewer link field, drop it and proceed
+          const reviewerLinkFieldInUse = Object.keys(fieldsForRequest).find((k) => k === reviewLinkField);
+          if (reviewerLinkFieldInUse) {
+            delete (fieldsForRequest as Record<string, unknown>)[reviewerLinkFieldInUse];
+            console.warn('Unknown reviewer link field; proceeding without link.');
+            continue;
           }
         }
 
@@ -681,6 +673,18 @@ export async function submitReview(
         ) {
           console.warn('Airtable field "Evidencia Base64" rejected value. Retrying without inline evidence.');
           delete (fieldsForRequest as Record<string, unknown>)['Evidencia Base64'];
+          continue;
+        }
+
+        // Handle unknown author pseudo field
+        if (
+          error instanceof Error &&
+          error.message.includes('UNKNOWN_FIELD_NAME') &&
+          error.message.includes(REVIEW_AUTHOR_FIELD) &&
+          REVIEW_AUTHOR_FIELD in fieldsForRequest
+        ) {
+          console.warn(`Airtable base missing author field "${REVIEW_AUTHOR_FIELD}". Retrying without it.`);
+          delete (fieldsForRequest as Record<string, unknown>)[REVIEW_AUTHOR_FIELD];
           continue;
         }
 

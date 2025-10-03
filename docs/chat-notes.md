@@ -41,6 +41,11 @@ VITE_AIRTABLE_BASE_ID=appXXXXXXXXXXXXXX
 # VITE_UPLOAD_ENDPOINT=http://localhost:8888/.netlify/functions/upload-image
 # Opcional: fallback Imgur
 # VITE_IMGUR_CLIENT_ID=xxxxxxxx
+# Opcional: vínculo del reseñador (en Reseñas) y tabla fija
+# VITE_REVIEW_LINK_FIELD=Reseñadores
+# VITE_REVIEWERS_TABLE=Reseñadores
+# Opcional: campo de autor/pseudónimo en "Reseñas"
+# VITE_REVIEW_AUTHOR_FIELD="Autor Pseudo"  # cámbialo si tu base usa otro nombre
 ```
 
 ## Airtable – esquema recomendado
@@ -110,4 +115,3 @@ git push -u origin main
 - Si el upload falla en dev con 404: usar `netlify dev` o definir `VITE_UPLOAD_ENDPOINT` a `http://localhost:8888/.netlify/functions/upload-image`.
 - Si `Calificación` 422: definir opciones en el select o limpiar cache: `localStorage.removeItem('cornuscore-airtable-rating-mode')`.
 - Si no existe `Evidencia Base64`: la app reintenta sin inline automaticamente.
-

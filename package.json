@@ -10,6 +10,8 @@
     "start:vite": "vite",
     "start:netlify": "netlify dev",
     "deploy:netlify": "netlify deploy --prod"
+    ,
+    "push": "sh -c 'git add -A && git commit -m \"${COMMIT_MSG:-chore: update}\" || true && git push origin ${BRANCH:-main}'"
   },
   "dependencies": {
     "@netlify/blobs": "^6.3.0",
@@ -21,7 +23,10 @@
   },
   "devDependencies": {
     "@types/node": "^22.14.0",
+    "autoprefixer": "^10.4.20",
     "@vitejs/plugin-react": "^5.0.0",
+    "postcss": "^8.4.47",
+    "tailwindcss": "^3.4.13",
     "typescript": "~5.8.2",
     "vite": "^6.2.0"
   }
