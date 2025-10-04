@@ -2,8 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { getUserProfile } from '../services/airtableService';
 import { UserProfile } from '../types';
 import ReviewCard from '../components/ReviewCard';
+import { useAuth } from '../contexts/AuthContext';
 
 const ProfilePage: React.FC = () => {
+  const { user } = useAuth();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -12,6 +14,7 @@ const ProfilePage: React.FC = () => {
       setIsLoading(true);
       try {
         const userProfileData = await getUserProfile();
+        // In a real app, this would be fetched based on the logged-in user's ID
         setProfile(userProfileData);
       } catch (error) {
         console.error("Failed to fetch user profile", error);
@@ -41,11 +44,13 @@ const ProfilePage: React.FC = () => {
     );
   }
 
+  const pseudoUsername = user ? `user***${user.phone.slice(-4)}` : 'Anónimo';
+
   return (
     <div className="max-w-3xl mx-auto space-y-8">
       <div className="bg-white/80 backdrop-blur-sm p-8 rounded-2xl shadow-lg border border-white/30 text-center">
         <i className="fa-solid fa-user-circle text-6xl text-pink-400 mb-4"></i>
-        <h1 className="text-3xl font-bold text-gray-800">{profile.pseudoUsername}</h1>
+        <h1 className="text-3xl font-bold text-gray-800">{pseudoUsername}</h1>
         <p className="text-lg text-gray-600">
           Puntuación de Contribuidor: 
           <span className="font-bold text-pink-500 ml-2">{profile.contributionScore}</span>

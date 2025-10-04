@@ -4,15 +4,17 @@ import { CATEGORIES } from '../constants';
 
 interface ReviewCardProps {
   review: Review;
+  blurred?: boolean;
 }
 
-const ReviewCard: React.FC<ReviewCardProps> = ({ review }) => {
+const ReviewCard: React.FC<ReviewCardProps> = ({ review, blurred = false }) => {
   const [confirmations, setConfirmations] = useState(review.confirmations);
   const [isConfirmed, setIsConfirmed] = useState(false);
 
   const categoryDetails = CATEGORIES[review.category];
 
   const handleConfirm = () => {
+    if (blurred) return; // Prevent interaction on blurred cards
     if (!isConfirmed) {
       setConfirmations(confirmations + 1);
       setIsConfirmed(true);
@@ -23,9 +25,9 @@ const ReviewCard: React.FC<ReviewCardProps> = ({ review }) => {
   };
 
   return (
-    <div className="bg-white/90 backdrop-blur-sm p-4 rounded-xl shadow-md border border-white/30 transform hover:scale-[1.02] transition-transform duration-300">
+    <div className={`bg-white/90 backdrop-blur-sm p-4 rounded-xl shadow-md border border-white/30 transform transition-transform duration-300 ${!blurred ? 'hover:scale-[1.02]' : ''}`}>
       {review.personReviewed && (
-        <p className="mb-2 text-sm text-gray-500">
+        <p className={`mb-2 text-sm text-gray-500 ${blurred ? 'filter blur-sm' : ''}`}>
           Reseña sobre: <span className="font-bold text-pink-500 capitalize">{review.personReviewed}</span>
         </p>
       )}
@@ -36,23 +38,26 @@ const ReviewCard: React.FC<ReviewCardProps> = ({ review }) => {
         </div>
         <span className="text-xs text-gray-500">{new Date(review.date).toLocaleDateString()}</span>
       </div>
-      <p className="text-gray-700 mb-4">"{review.text}"</p>
-      {review.evidenceUrl && (
+      <p className={`text-gray-700 mb-4 ${blurred ? 'filter blur-sm' : ''}`}>"{review.text}"</p>
+      
+      {!blurred && review.evidenceUrl && (
         <div className="mb-4">
             <a href={review.evidenceUrl} target="_blank" rel="noopener noreferrer" title="Ver evidencia">
                 <img src={review.evidenceUrl} alt="Evidencia" className="rounded-lg max-h-64 mx-auto border shadow-sm cursor-pointer" />
             </a>
         </div>
       )}
+      
       <div className="flex justify-between items-center text-sm">
-        <span className="text-gray-500">Autor: <span className="font-semibold">{review.pseudoAuthor}</span></span>
+        <span className={`text-gray-500 ${blurred ? 'filter blur-sm' : ''}`}>Autor: <span className="font-semibold">{review.pseudoAuthor}</span></span>
         <button 
           onClick={handleConfirm}
-          className={`flex items-center gap-2 px-3 py-1 rounded-full transition-colors ${isConfirmed ? 'bg-pink-500 text-white' : 'bg-gray-200 text-gray-700 hover:bg-pink-200'}`}
+          disabled={blurred}
+          className={`flex items-center gap-2 px-3 py-1 rounded-full transition-colors ${isConfirmed ? 'bg-pink-500 text-white' : 'bg-gray-200 text-gray-700'} ${!blurred ? 'hover:bg-pink-200' : 'cursor-not-allowed'}`}
         >
           <i className="fa-solid fa-check"></i>
-          <span>{isConfirmed ? 'Confirmado' : 'Yo viví algo similar'}</span>
-          <span className="font-bold">{confirmations}</span>
+          <span className={blurred ? 'filter blur-sm' : ''}>{isConfirmed ? 'Confirmado' : 'Yo viví algo similar'}</span>
+          <span className={`font-bold ${blurred ? 'filter blur-sm' : ''}`}>{confirmations}</span>
         </button>
       </div>
     </div>
