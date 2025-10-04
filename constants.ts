@@ -1,4 +1,3 @@
-
 import { ReviewCategory, ReputationLevel } from './types';
 
 export const CATEGORIES: Record<ReviewCategory, { label: string; emoji: string; score: number; color: string }> = {
@@ -15,3 +14,43 @@ export const REPUTATION_LEVELS: Record<ReputationLevel, { label: string; color: 
   [ReputationLevel.Risk]: { label: 'Riesgo Alto', color: 'text-red-500', progressColor: 'bg-red-500', icon: 'fa-solid fa-circle-xmark' },
   [ReputationLevel.Unknown]: { label: 'Sin Datos', color: 'text-gray-400', progressColor: 'bg-gray-400', icon: 'fa-solid fa-circle-question' },
 };
+
+export const COUNTRY_LIST = [
+  'Argentina',
+  'Bolivia',
+  'Brasil',
+  'Chile',
+  'Colombia',
+  'Ecuador',
+  'España',
+  'México',
+  'Paraguay',
+  'Perú',
+  'Uruguay',
+  'Venezuela',
+  'Otro',
+];
+
+const FLAG_MAP: Record<string, string> = {
+  argentina: '🇦🇷',
+  bolivia: '🇧🇴',
+  brasil: '🇧🇷',
+  chile: '🇨🇱',
+  colombia: '🇨🇴',
+  ecuador: '🇪🇨',
+  españa: '🇪🇸',
+  espana: '🇪🇸',
+  méxico: '🇲🇽',
+  mexico: '🇲🇽',
+  paraguay: '🇵🇾',
+  perú: '🇵🇪',
+  peru: '🇵🇪',
+  uruguay: '🇺🇾',
+  venezuela: '🇻🇪',
+};
+
+export function countryFlagEmoji(country: string | undefined | null): string {
+  if (!country) return '🏳️';
+  const key = country.toLowerCase().normalize('NFD').replace(/\p{Diacritic}/gu, '');
+  return FLAG_MAP[key] ?? '🏳️';
+}

@@ -47,7 +47,7 @@ const ReputationMeter: React.FC<ReputationMeterProps> = ({ profile, blurred = fa
             style={{ width: getProgressBarWidth() }}
           ></div>
         </div>
-        <p className="text-sm text-gray-500 mt-2">{profile.reviews.length} reseña(s) encontrada(s).</p>
+        <p className="text-sm text-gray-500 mt-2">{profile.reviewsCount ?? profile.reviews.length} reseña(s) encontrada(s).</p>
       </div>
     </div>
   );

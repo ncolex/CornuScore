@@ -13,11 +13,13 @@ import { AuthProvider } from './contexts/AuthContext';
 import PrivateRoute from './components/PrivateRoute';
 
 const App: React.FC = () => {
+  const mainClassName = 'flex-grow container mx-auto px-4 py-8';
+
   return (
     <AuthProvider>
       <div className="flex flex-col min-h-screen font-sans">
         <Header />
-        <main className="flex-grow container mx-auto px-4 py-8">
+        <main className={mainClassName}>
           <Routes>
             <Route path="/" element={<HomePage />} />
             <Route path="/login" element={<LoginPage />} />

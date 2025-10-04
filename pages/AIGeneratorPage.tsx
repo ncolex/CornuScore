@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { GoogleGenAI } from '@google/genai';
-import { ReviewCategory } from '../types';
-import { submitReview } from '../services/airtableService';
+import { ReviewCategory, SubmitReviewPayload } from '../types';
 import { CATEGORIES } from '../constants';
 import GeneratedReviewCard from '../components/GeneratedReviewCard';
 
@@ -58,15 +57,36 @@ const AIGeneratorPage: React.FC = () => {
         }
     };
 
-    const handleAddReview = async (result: Omit<GeneratedResult, 'sources'>) => {
-        const score = CATEGORIES[result.category]?.score ?? 0;
-        const success = await submitReview({
-            ...result,
-            score,
-            pseudoAuthor: 'AI Analyst',
-            evidenceUrl: sources.length > 0 ? sources[0].web.uri : undefined, // Use first source as evidence
-        });
-        return success;
+    const handleAddReview = async (result: GeneratedResult) => {
+        try {
+            const rating = CATEGORIES[result.category]?.score >= 0 ? 'POSITIVE' : 'NEGATIVE';
+            const payload: SubmitReviewPayload = {
+                personIdentifier: result.personIdentifier,
+                country: result.country,
+                category: result.category,
+                rating,
+                score: CATEGORIES[result.category]?.score,
+                text: result.text,
+                phoneNumber: '0000000000',
+                reporterName: 'AI Analyst',
+                reporterPhone: '0000000000',
+            };
+
+            const response = await fetch('/.netlify/functions/submitReview', {
+                method: 'POST',
+                body: JSON.stringify(payload),
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to add AI-generated review');
+            }
+
+            const json = await response.json();
+            return json.success === true;
+        } catch (err) {
+            console.error('Failed to add generated review', err);
+            return false;
+        }
     };
 
     return (

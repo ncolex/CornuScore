@@ -1,9 +1,7 @@
-
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { getRankings } from '../services/airtableService';
 import { PersonProfile } from '../types';
-import { REPUTATION_LEVELS } from '../constants';
+import { REPUTATION_LEVELS, countryFlagEmoji } from '../constants';
 
 const RankingCard: React.FC<{ profile: PersonProfile; rank: number }> = ({ profile, rank }) => {
   const reputationDetails = REPUTATION_LEVELS[profile.reputation];
@@ -13,7 +11,12 @@ const RankingCard: React.FC<{ profile: PersonProfile; rank: number }> = ({ profi
         <span className={`text-2xl font-bold w-10 text-center ${reputationDetails.color}`}>#{rank}</span>
         <div className="flex-grow">
           <p className="font-bold text-lg text-gray-800 capitalize">{profile.identifiers[0]}</p>
-          <p className="text-sm text-gray-500">{profile.reviews.length} reseñas</p>
+          <p className="text-sm text-gray-500 flex items-center gap-2">
+            <span>{countryFlagEmoji(profile.country)}</span>
+            <span>{profile.country}</span>
+            <span className="text-gray-400">•</span>
+            <span>{profile.reviewsCount ?? profile.reviews.length} reseñas</span>
+          </p>
         </div>
         <i className={`${reputationDetails.icon} text-3xl ${reputationDetails.color}`}></i>
       </div>
@@ -29,8 +32,13 @@ const RankingPage: React.FC = () => {
   useEffect(() => {
     const fetchRankings = async () => {
       setIsLoading(true);
-      const data = await getRankings();
-      setRankings(data);
+      try {
+        const response = await fetch('/.netlify/functions/getRankings');
+        const data = await response.json();
+        setRankings(data);
+      } catch (error) {
+        console.error("Failed to fetch rankings", error);
+      }
       setIsLoading(false);
     };
     fetchRankings();
