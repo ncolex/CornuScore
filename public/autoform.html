@@ -1,13 +1,125 @@
-<form name="reseñas-celebridades" method="POST" data-netlify="true" hidden>
-  <input type="text" name="persona" />
-  <input type="text" name="apodo" />
-  <input type="text" name="pais" />
-  <input type="text" name="instagram" />
-  <input type="text" name="categoria" />
-  <input type="text" name="calificacion" />
-  <input type="text" name="texto" />
-  <input type="text" name="fecha" />
-  <input type="text" name="evidencia" />
-  <input type="text" name="autor_pseudo" />
-  <input type="number" name="confirmaciones" />
-</form>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Submit Review</title>
+    <style>
+        body { font-family: sans-serif; margin: 2em; }
+        form { display: grid; grid-template-columns: 150px 300px; gap: 1em; }
+        label { font-weight: bold; }
+        input, select { padding: 0.5em; }
+        button { grid-column: 2; padding: 0.7em; background-color: #007bff; color: white; border: none; cursor: pointer; }
+        #response { margin-top: 1em; padding: 1em; border-radius: 5px; }
+        .success { background-color: #d4edda; color: #155724; }
+        .error { background-color: #f8d7da; color: #721c24; }
+    </style>
+</head>
+<body>
+
+    <h1>Submit a Review</h1>
+
+    <form name="reseñas-celebridades">
+        <label for="persona">Persona:</label>
+        <input type="text" id="persona" name="persona" required />
+
+        <label for="apodo">Apodo:</label>
+        <input type="text" id="apodo" name="apodo" />
+
+        <label for="pais">País:</label>
+        <input type="text" id="pais" name="pais" required />
+
+        <label for="instagram">Instagram:</label>
+        <input type="text" id="instagram" name="instagram" />
+
+        <label for="categoria">Categoría:</label>
+        <select id="categoria" name="categoria" required>
+            <option value="INFIDELITY">Infidelidad</option>
+            <option value="TOXIC">Toxicidad</option>
+            <option value="BETRAYAL">Traición</option>
+            <option value="THEFT">Robo</option>
+            <option value="POSITIVE">Positivo</option>
+        </select>
+
+        <label for="calificacion">Calificación:</label>
+        <select id="calificacion" name="calificacion" required>
+            <option value="😡">😡 Negativa</option>
+            <option value="🤔">🤔 Incierta</option>
+            <option value="😍">😍 Positiva</option>
+        </select>
+
+        <label for="texto">Texto:</label>
+        <input type="text" id="texto" name="texto" required />
+
+        <label for="evidencia">URL Evidencia:</label>
+        <input type="url" id="evidencia" name="evidencia" />
+
+        <label for="autor_pseudo">Tu Alias:</label>
+        <input type="text" id="autor_pseudo" name="autor_pseudo" />
+
+        <button type="submit">Submit Review</button>
+    </form>
+
+    <div id="response"></div>
+
+    <script>
+        const form = document.querySelector('form[name="reseñas-celebridades"]');
+        const responseDiv = document.getElementById('response');
+
+        // Mapping from form names to payload keys
+        const keyMapping = {
+            persona: 'personIdentifier',
+            apodo: 'nickname',
+            pais: 'country',
+            instagram: 'instagram',
+            categoria: 'category',
+            calificacion: 'rating',
+            texto: 'text',
+            evidencia: 'evidenceUrl',
+            autor_pseudo: 'reporterAlias'
+        };
+
+        form.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            responseDiv.innerHTML = '';
+            responseDiv.className = '';
+
+            const formData = new FormData(form);
+            const jsonData = {};
+
+            for (const [key, value] of formData.entries()) {
+                const newKey = keyMapping[key] || key;
+                jsonData[newKey] = value;
+            }
+            
+            // Add a dummy phone number as it is required by the payload
+            jsonData.phoneNumber = '';
+
+            try {
+                const response = await fetch('/.netlify/functions/submitReview', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(jsonData)
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.message || 'Something went wrong');
+                }
+
+                const result = await response.json();
+                responseDiv.className = 'success';
+                responseDiv.textContent = 'Review submitted successfully!';
+                form.reset();
+
+            } catch (error) {
+                responseDiv.className = 'error';
+                responseDiv.textContent = `Error: ${error.message}`;
+            }
+        });
+    </script>
+
+</body>
+</html>
