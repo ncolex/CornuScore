@@ -1,4 +1,4 @@
-import { Review, PersonProfile, UserProfile, ReviewCategory, ReputationLevel, WebCheckResult, InstagramSearchResult } from '../types';
+import { Review, PersonProfile, UserProfile, ReviewCategory, ReputationLevel, WebCheckResult, InstagramSearchResult, RegisteredUser } from '../types';
 
 // --- NOTA PARA LA BASE DE DATOS ---
 // Los siguientes datos son de prueba (mock data).
@@ -37,6 +37,12 @@ const mockProfiles: PersonProfile[] = [
   { id: 'prof3', identifiers: ['ricardo diaz', 'richid'], country: 'Colombia', totalScore: -7, reputation: ReputationLevel.Risk, reviews: mockReviews.filter(r => r.personReviewed === 'Ricardo Diaz') },
   { id: 'prof4', identifiers: ['sofia luna', 'sofilu'], country: 'España', totalScore: 2, reputation: ReputationLevel.Positive, reviews: mockReviews.filter(r => r.personReviewed === 'Sofia Luna') },
   { id: 'prof5', identifiers: ['pedro navaja'], country: 'Perú', totalScore: -2, reputation: ReputationLevel.Warning, reviews: [{ id: 'rev9', category: ReviewCategory.Toxic, text: "Manipulador, te hace sentir culpable por todo.", score: -2, date: "2023-06-18T12:00:00Z", pseudoAuthor: "user333", confirmations: 4, personReviewed: 'Pedro Navaja' }] },
+];
+
+// --- MOCK USER DATABASE ---
+const mockUsers: RegisteredUser[] = [
+    { id: 'user_xyz', phone: 'google_user_123456', email: 'test@google.com', contributionScore: 125 },
+    { id: 'user_abc', phone: '1122334455', email: 'user@example.com', passwordHash: 'hashed_password', contributionScore: 50 },
 ];
 
 
@@ -119,17 +125,44 @@ export const getRankings = async (): Promise<{ topNegative: PersonProfile[], top
     return { topNegative, topPositive };
 };
 
+export const registerUser = async (userData: { phone: string; email?: string; password?: string }): Promise<{ success: boolean; message: string; user?: RegisteredUser }> => {
+    console.log("Registering user:", { phone: userData.phone, email: userData.email });
+    await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate network delay
 
-export const getUserProfile = async (): Promise<UserProfile> => {
-    console.log("Fetching user profile");
+    // Check if phone or email already exists
+    const existingUser = mockUsers.find(u => u.phone === userData.phone || (userData.email && u.email === userData.email));
+    if (existingUser) {
+        return { success: false, message: 'El número de teléfono o correo electrónico ya está registrado.' };
+    }
+
+    const newUser: RegisteredUser = {
+        id: `user_${Math.random().toString(36).substring(2, 9)}`,
+        phone: userData.phone,
+        email: userData.email,
+        // In a real app, you would hash the password here before storing
+        passwordHash: userData.password ? `hashed_${userData.password}` : undefined,
+        contributionScore: 0,
+    };
+
+    mockUsers.push(newUser);
+    console.log("Current users:", mockUsers);
+    
+    return { success: true, message: 'Registro exitoso.', user: newUser };
+};
+
+
+export const getUserProfile = async (phone?: string): Promise<UserProfile> => {
+    console.log("Fetching user profile for phone:", phone);
     await new Promise(resolve => setTimeout(resolve, 800)); // Simulate network delay
 
-    // Return a static mock profile for the "logged in" user
+    const dbUser = mockUsers.find(u => u.phone === phone);
+
+    // This part for reviews is static for now, as there's no link between a user and the reviews they create in mock data
     const userReviews = mockReviews.filter(r => r.pseudoAuthor === 'user123' || r.pseudoAuthor === 'user456');
     return {
-        id: 'user_xyz',
-        pseudoUsername: 'user123',
-        contributionScore: 125,
+        id: dbUser?.id || 'user_xyz',
+        pseudoUsername: dbUser?.phone ? `user***${dbUser.phone.slice(-4)}` : 'user123',
+        contributionScore: dbUser?.contributionScore ?? 125,
         reviews: userReviews
     };
 };

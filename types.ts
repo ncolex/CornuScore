@@ -36,7 +36,7 @@ export interface PersonProfile {
 }
 
 export interface UserProfile {
-  id: string;
+  id:string;
   pseudoUsername: string;
   contributionScore: number;
   reviews: Review[];
@@ -56,4 +56,12 @@ export interface InstagramSearchResult {
   username: string;
   profilePicUrl: string;
   fullName: string;
+}
+
+export interface RegisteredUser {
+  id: string;
+  phone: string;
+  email?: string;
+  passwordHash?: string; // In a real app, never store plain text passwords
+  contributionScore: number;
 }

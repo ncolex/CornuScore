@@ -7,6 +7,7 @@ import NewReviewPage from './pages/NewReviewPage';
 import ResultsPage from './pages/ResultsPage';
 import RankingPage from './pages/RankingPage';
 import LoginPage from './pages/LoginPage';
+import RegisterPage from './pages/RegisterPage';
 import ProfilePage from './pages/ProfilePage';
 import PrivateRoute from './components/PrivateRoute';
 import { AuthProvider } from './contexts/AuthContext';
@@ -23,6 +24,7 @@ const App: React.FC = () => {
             <Route path="/results/:query" element={<ResultsPage />} />
             <Route path="/ranking" element={<RankingPage />} />
             <Route path="/login" element={<LoginPage />} />
+            <Route path="/register" element={<RegisterPage />} />
             <Route path="/profile" element={
               <PrivateRoute>
                 <ProfilePage />

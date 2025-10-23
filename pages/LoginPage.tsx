@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import HeartIcon from '../components/icons/HeartIcon';
 
@@ -61,6 +61,15 @@ const LoginPage: React.FC = () => {
             Ingresar
           </button>
         </form>
+
+        <div className="mt-4 text-sm">
+          <p className="text-gray-600">
+            ¿No tienes una cuenta?{' '}
+            <Link to="/register" className="font-semibold text-pink-500 hover:text-pink-600">
+              Regístrate
+            </Link>
+          </p>
+        </div>
 
         <div className="my-6 flex items-center">
           <div className="flex-grow border-t border-gray-300"></div>

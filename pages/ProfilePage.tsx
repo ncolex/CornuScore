@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { getUserProfile } from '../services/airtableService';
+import { generatePlaceholderImage } from '../services/imageGenerationService';
 import { UserProfile, Review } from '../types';
 import ReviewCard from '../components/ReviewCard';
 import { useAuth } from '../hooks/useAuth';
@@ -9,12 +10,15 @@ const ProfilePage: React.FC = () => {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [userReviews, setUserReviews] = useState<Review[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [profileImageUrl, setProfileImageUrl] = useState<string | null>(null);
+  const [isImageLoading, setIsImageLoading] = useState(true);
 
   useEffect(() => {
     const fetchProfile = async () => {
+      if (!user) return;
       setIsLoading(true);
       try {
-        const userProfileData = await getUserProfile();
+        const userProfileData = await getUserProfile(user.phone);
         setProfile(userProfileData);
         setUserReviews(userProfileData.reviews);
       } catch (error) {
@@ -24,7 +28,32 @@ const ProfilePage: React.FC = () => {
       }
     };
     fetchProfile();
-  }, []);
+  }, [user]);
+
+  useEffect(() => {
+    if (!user) {
+        setIsImageLoading(false);
+        return;
+    };
+
+    const generateImage = async () => {
+        setIsImageLoading(true);
+        try {
+            const pseudoUsername = `user***${user.phone.slice(-4)}`;
+            const initials = (pseudoUsername[0] + pseudoUsername.slice(-1)).toUpperCase(); 
+            const url = await generatePlaceholderImage(initials);
+            setProfileImageUrl(url);
+        } catch (error) {
+            console.error("Failed to generate placeholder image on profile page", error);
+            setProfileImageUrl(null);
+        } finally {
+            setIsImageLoading(false);
+        }
+    };
+
+    generateImage();
+  }, [user]);
+
 
   const handleDeleteReview = (reviewId: string) => {
     if (window.confirm('¿Estás seguro de que quieres eliminar esta reseña? Esta acción no se puede deshacer.')) {
@@ -58,12 +87,33 @@ const ProfilePage: React.FC = () => {
     );
   }
 
-  const pseudoUsername = user ? `user***${user.phone.slice(-4)}` : 'Anónimo';
+  const pseudoUsername = profile.pseudoUsername;
+
+  const ProfileAvatar = () => {
+    if (isImageLoading) {
+      return (
+        <div className="w-24 h-24 rounded-full bg-gray-200 mx-auto mb-4 flex items-center justify-center animate-pulse">
+            <i className="fa-solid fa-image text-4xl text-gray-400"></i>
+        </div>
+      );
+    }
+    if (profileImageUrl) {
+      return (
+        <img 
+            src={profileImageUrl} 
+            alt="Foto de perfil generada por IA" 
+            className="w-24 h-24 rounded-full object-cover mx-auto mb-4 shadow-lg border-4 border-white"
+        />
+      );
+    }
+    // Fallback icon
+    return <i className="fa-solid fa-user-circle text-8xl text-pink-400 mb-4 h-24 flex items-center justify-center"></i>;
+  };
 
   return (
     <div className="max-w-3xl mx-auto space-y-8">
       <div className="bg-white/80 backdrop-blur-sm p-8 rounded-2xl shadow-lg border border-white/30 text-center">
-        <i className="fa-solid fa-user-circle text-6xl text-pink-400 mb-4"></i>
+        <ProfileAvatar />
         <h1 className="text-3xl font-bold text-gray-800">{pseudoUsername}</h1>
         <p className="text-lg text-gray-600">
           Puntuación de Contribuidor: 
