@@ -2,7 +2,7 @@
 import { Pool } from '@neondatabase/serverless';
 import { Review, PersonProfile, UserProfile, ReviewCategory, ReputationLevel, RegisteredUser } from '../types';
 
-const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+const pool = new Pool({ connectionString: import.meta.env.VITE_DATABASE_URL });
 
 export async function initDb() {
   console.log("Initializing database...");
@@ -221,25 +221,60 @@ export const getRankings = async (): Promise<{ topNegative: PersonProfile[], top
         const result = await client.query('SELECT * FROM persons ORDER BY total_score ASC');
         const allPersons = result.rows;
 
-        const topNegative = allPersons.slice(0, 5).map(p => ({
-            id: p.id,
-            identifiers: [], // Will be populated later if needed
-            country: p.country,
-            totalScore: p.total_score,
-            reputation: p.reputation,
-            reviews: [] // Will be populated later if needed
+        const enrichedPersons: PersonProfile[] = await Promise.all(allPersons.map(async (p: any) => {
+            const identifiersResult = await client.query('SELECT identifier FROM person_identifiers WHERE person_id = $1', [p.id]);
+            const reviewsResult = await client.query('SELECT * FROM reviews WHERE person_id = $1', [p.id]);
+
+            return {
+                id: p.id,
+                identifiers: identifiersResult.rows.map(r => r.identifier),
+                country: p.country,
+                totalScore: p.total_score,
+                reputation: p.reputation,
+                reviews: reviewsResult.rows.map(r => ({
+                    id: r.id,
+                    category: r.category,
+                    text: r.text,
+                    score: r.score,
+                    date: r.date,
+                    pseudoAuthor: r.pseudo_author,
+                    confirmations: r.confirmations,
+                    evidenceUrl: r.evidence_url
+                }))
+            };
         }));
 
-        const topPositive = allPersons.slice().reverse().slice(0, 5).map(p => ({
-            id: p.id,
-            identifiers: [], // Will be populated later if needed
-            country: p.country,
-            totalScore: p.total_score,
-            reputation: p.reputation,
-            reviews: [] // Will be populated later if needed
-        }));
+        const topNegative = enrichedPersons.slice(0, 5);
+        const topPositive = enrichedPersons.slice().reverse().slice(0, 5);
 
         return { topNegative, topPositive };
+    } finally {
+        client.release();
+    }
+};
+
+export const loginUser = async (phone: string, password: string): Promise<RegisteredUser | null> => {
+    const client = await pool.connect();
+    try {
+        const userResult = await client.query('SELECT * FROM users WHERE phone = $1', [phone]);
+        if (userResult.rows.length === 0) {
+            return null; // User not found
+        }
+
+        const dbUser = userResult.rows[0];
+
+        // In a real app, use a proper password hashing library (e.g., bcrypt) for comparison
+        if (dbUser.password_hash === `hashed_${password}`) {
+            return {
+                id: dbUser.id,
+                phone: dbUser.phone,
+                email: dbUser.email,
+                passwordHash: dbUser.password_hash,
+                contributionScore: dbUser.contribution_score
+            };
+        } else {
+            return null; // Incorrect password
+        }
     } finally {
         client.release();
     }
