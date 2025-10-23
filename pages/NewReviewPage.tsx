@@ -1,191 +1,77 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { SubmitReviewEvidence, SubmitReviewPayload, ReviewCategory } from '../types';
-import { CATEGORIES, COUNTRY_LIST } from '../constants';
-import { useAuth } from '../contexts/AuthContext';
+import { submitReview } from '../services/airtableService';
+import { CATEGORIES } from '../constants';
+import { ReviewCategory } from '../types';
 
-const ACCEPTED_MIME_TYPES = ['image/png', 'image/jpeg'];
-const MAX_EVIDENCE_SIZE_MB = 2;
-const MAX_EVIDENCE_SIZE_BYTES = MAX_EVIDENCE_SIZE_MB * 1024 * 1024;
-const COUNTRY_STORAGE_KEY = 'cornuscore-country';
+const countryList = ["Argentina", "Bolivia", "Brasil", "Chile", "Colombia", "Ecuador", "España", "México", "Paraguay", "Perú", "Uruguay", "Venezuela", "Otro"];
 
 const NewReviewPage: React.FC = () => {
-  const { user } = useAuth();
-  const navigate = useNavigate();
-
   const [personIdentifier, setPersonIdentifier] = useState('');
-  const [nickname, setNickname] = useState('');
-  const [email, setEmail] = useState('');
-  const [phoneNumber, setPhoneNumber] = useState('');
-  const [instagram, setInstagram] = useState('');
-  const [reporterName, setReporterName] = useState('');
-  const [reporterPhone, setReporterPhone] = useState('');
   const [country, setCountry] = useState('Argentina');
+  const [otherCountry, setOtherCountry] = useState('');
+  const [pseudoAuthor, setPseudoAuthor] = useState('');
   const [category, setCategory] = useState<ReviewCategory | null>(null);
   const [text, setText] = useState('');
+  const [evidence, setEvidence] = useState<File | null>(null);
   const [evidencePreview, setEvidencePreview] = useState<string | null>(null);
-  const [evidenceAttachment, setEvidenceAttachment] = useState<SubmitReviewEvidence | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
-  const [uploadProgress, setUploadProgress] = useState<number>(0);
+  const navigate = useNavigate();
 
-  useEffect(() => {
-    try {
-      const storedCountry = window.localStorage.getItem(COUNTRY_STORAGE_KEY);
-      if (storedCountry) {
-        setCountry(storedCountry);
-      }
-    } catch (storageError) {
-      console.warn('No se pudo leer el país almacenado', storageError);
-    }
-  }, []);
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files ? e.target.files[0] : null;
+    setEvidence(file);
 
-  useEffect(() => {
-    try {
-      if (country) {
-        window.localStorage.setItem(COUNTRY_STORAGE_KEY, country);
-      }
-    } catch (storageError) {
-      console.warn('No se pudo persistir el país seleccionado', storageError);
-    }
-  }, [country]);
-
-  useEffect(() => {
-    if (user?.phone) {
-      setReporterPhone(user.phone);
-    }
-  }, [user]);
-
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-
-    if (!file) {
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setEvidencePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    } else {
       setEvidencePreview(null);
-      setEvidenceAttachment(null);
-      return;
     }
-
-    if (!ACCEPTED_MIME_TYPES.includes(file.type)) {
-      setError('Solo se permiten imágenes .jpg o .png.');
-      event.target.value = '';
-      return;
-    }
-
-    if (file.size > MAX_EVIDENCE_SIZE_BYTES) {
-      setError(`La imagen debe pesar menos de ${MAX_EVIDENCE_SIZE_MB} MB.`);
-      event.target.value = '';
-      return;
-    }
-
-    const reader = new FileReader();
-    reader.onprogress = (ev) => {
-      if (ev.lengthComputable) {
-        const pct = Math.min(60, Math.round((ev.loaded / ev.total) * 60));
-        setUploadProgress(pct);
-      }
-    };
-    reader.onloadend = () => {
-      if (typeof reader.result === 'string') {
-        setEvidencePreview(reader.result);
-        setEvidenceAttachment({
-          dataUrl: reader.result,
-          filename: file.name,
-          mimeType: file.type || 'application/octet-stream',
-        });
-        setUploadProgress(60);
-        setError('');
-      }
-    };
-    reader.onerror = () => {
-      setError('No se pudo procesar la imagen. Intenta con otro archivo.');
-      setEvidencePreview(null);
-      setEvidenceAttachment(null);
-      event.target.value = '';
-    };
-
-    reader.readAsDataURL(file);
   };
 
-  const handleSubmit = async (event: React.FormEvent) => {
-    event.preventDefault();
-
-    const trimmedIdentifier = personIdentifier.trim();
-    const trimmedDescription = text.trim();
-    const trimmedPhoneNumber = phoneNumber.trim();
-    const trimmedReporterName = reporterName.trim();
-    const trimmedReporterPhone = reporterPhone.trim();
-
-    if (!country || !category || !trimmedDescription || !trimmedPhoneNumber || !trimmedReporterName || !trimmedReporterPhone) {
-      setError('Por favor, completa todos los campos obligatorios, incluido tu nombre y número de celular.');
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!personIdentifier || !country || (country === 'Otro' && !otherCountry.trim()) || !pseudoAuthor || !category || !text) {
+      setError('Por favor, completa todos los campos obligatorios.');
       return;
     }
+    setError('');
+    setIsLoading(true);
 
-    const subjectDigits = trimmedPhoneNumber.replace(/\D/g, '');
-    if (subjectDigits.length < 6) {
-      setError('Ingresa un número de celular válido de tu ex (al menos 6 dígitos).');
-      return;
+    let evidenceUrl: string | undefined = undefined;
+    if (evidence) {
+        try {
+            const toBase64 = (file: File) => new Promise<string>((resolve, reject) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = () => resolve(reader.result as string);
+                reader.onerror = error => reject(error);
+            });
+            evidenceUrl = await toBase64(evidence);
+        } catch (err) {
+            console.error("Error converting file to Base64", err);
+            setError('Hubo un error al procesar la imagen de evidencia.');
+            setIsLoading(false);
+            return;
+        }
     }
 
-    const reporterDigits = trimmedReporterPhone.replace(/\D/g, '');
-    if (reporterDigits.length < 6) {
-      setError('Ingresa tu número de celular válido (al menos 6 dígitos).');
-      return;
-    }
+    const score = CATEGORIES[category].score;
+    const finalCountry = country === 'Otro' ? otherCountry.trim() : country;
 
-    if (!category) {
-      setError('Seleccioná una categoría.');
-      return;
-    }
+    const success = await submitReview({ personIdentifier, country: finalCountry, category, text, score, pseudoAuthor, evidenceUrl });
+    setIsLoading(false);
 
-    if (trimmedDescription.length < 40) {
-      setError('Contá un poco más: la descripción debe tener al menos 40 caracteres.');
-      return;
-    }
-
-    const rating = CATEGORIES[category].score >= 0 ? 'POSITIVE' : 'NEGATIVE';
-    const resolvedIdentifier = trimmedIdentifier || trimmedPhoneNumber;
-
-    const payload: SubmitReviewPayload = {
-      personIdentifier: resolvedIdentifier,
-      nickname: nickname.trim() || undefined,
-      email: email.trim() || undefined,
-      phoneNumber: trimmedPhoneNumber,
-      instagram: instagram.trim() || undefined,
-      country,
-      category,
-      rating,
-      score: CATEGORIES[category].score,
-      text: trimmedDescription,
-      reporterName: trimmedReporterName,
-      reporterPhone: trimmedReporterPhone,
-      evidence: evidenceAttachment ?? undefined,
-    };
-
-    try {
-      setIsLoading(true);
-      setError('');
-      const response = await fetch('/.netlify/functions/submitReview', {
-        method: 'POST',
-        body: JSON.stringify(payload),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to submit review');
-      }
-
-      const result = await response.json();
-
-      if (result.success) {
-        alert('Reseña enviada con éxito. Gracias por tu contribución.');
-        navigate(`/results/${encodeURIComponent(trimmedPhoneNumber)}`);
-      } else {
-        setError('Hubo un error al enviar tu reseña. Inténtalo de nuevo.');
-      }
-    } catch (submitError) {
-      console.error('Failed to submit review', submitError);
+    if (success) {
+      alert('Reseña enviada con éxito. Gracias por tu contribución.');
+      navigate(`/results/${encodeURIComponent(personIdentifier)}`);
+    } else {
       setError('Hubo un error al enviar tu reseña. Inténtalo de nuevo.');
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -196,154 +82,83 @@ const NewReviewPage: React.FC = () => {
         <p className="text-center text-gray-600 mb-6">Tu aporte es anónimo y ayuda a la comunidad. Sé honesto y respetuoso.</p>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-6">
             <div>
               <label htmlFor="identifier" className="block text-sm font-medium text-gray-700 mb-1">
-                Identificador de la persona
+                Usuario de Instagram de la persona <span className="text-red-500">*</span>
               </label>
-              <input
-                id="identifier"
-                type="text"
-                placeholder="Nombre, apodo, @instagram..."
-                value={personIdentifier}
-                onChange={(event) => setPersonIdentifier(event.target.value)}
-                className="w-full px-5 py-3 text-base border-2 border-pink-200 rounded-full shadow-sm focus:ring-2 focus:ring-pink-400 focus:border-pink-400"
-              />
+               <div className="relative">
+                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                   <i className="fa-brands fa-instagram text-gray-400"></i>
+                 </div>
+                 <input
+                   id="identifier"
+                   type="text"
+                   placeholder="@usuario_de_instagram"
+                   value={personIdentifier}
+                   onChange={(e) => setPersonIdentifier(e.target.value)}
+                   className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-pink-500 focus:border-pink-500"
+                   required
+                 />
+               </div>
             </div>
-            <div>
-              <label htmlFor="nickname" className="block text-sm font-medium text-gray-700 mb-1">
-                Apodo o alias conocido
-              </label>
-              <input
-                id="nickname"
-                type="text"
-                placeholder="El apodo con el que lo conocés"
-                value={nickname}
-                onChange={(event) => setNickname(event.target.value)}
-                className="w-full px-5 py-3 text-base border-2 border-pink-200 rounded-full shadow-sm focus:ring-2 focus:ring-pink-400 focus:border-pink-400"
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-                Email (opcional)
-              </label>
-              <input
-                id="email"
-                type="email"
-                placeholder="email@ejemplo.com"
-                value={email}
-                onChange={(event) => setEmail(event.target.value)}
-                className="w-full px-5 py-3 text-base border-2 border-pink-200 rounded-full shadow-sm focus:ring-2 focus:ring-pink-400 focus:border-pink-400"
-              />
-            </div>
-            <div>
-              <label htmlFor="instagram" className="block text-sm font-medium text-gray-700 mb-1">
-                Instagram o red social
-              </label>
-              <input
-                id="instagram"
-                type="text"
-                placeholder="@usuario"
-                value={instagram}
-                onChange={(event) => setInstagram(event.target.value)}
-                className="w-full px-5 py-3 text-base border-2 border-pink-200 rounded-full shadow-sm focus:ring-2 focus:ring-pink-400 focus:border-pink-400"
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
+             <div>
               <label htmlFor="country" className="block text-sm font-medium text-gray-700 mb-1">
                 País / Región <span className="text-red-500">*</span>
               </label>
               <select
                 id="country"
                 value={country}
-                onChange={(event) => setCountry(event.target.value)}
-                className="w-full px-5 py-3 text-base border-2 border-pink-200 rounded-full shadow-sm focus:ring-2 focus:ring-pink-400 focus:border-pink-400"
+                onChange={(e) => setCountry(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-pink-500 focus:border-pink-500"
                 required
               >
                 <option value="" disabled>Selecciona un país</option>
-                {COUNTRY_LIST.map((option) => (
-                  <option key={option} value={option}>{option}</option>
-                ))}
+                {countryList.map(c => <option key={c} value={c}>{c}</option>)}
               </select>
+              {country === 'Otro' && (
+                <input
+                  type="text"
+                  placeholder="Por favor, especifica el país"
+                  value={otherCountry}
+                  onChange={(e) => setOtherCountry(e.target.value)}
+                  className="w-full mt-2 px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-pink-500 focus:border-pink-500"
+                  required
+                />
+              )}
             </div>
-            <div>
-              <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">
-                Celular de la persona denunciada <span className="text-red-500">*</span>
+             <div>
+              <label htmlFor="pseudoAuthor" className="block text-sm font-medium text-gray-700 mb-1">
+                Tu Seudónimo (será público) <span className="text-red-500">*</span>
               </label>
               <input
-                id="phone"
-                type="tel"
-                placeholder="+CódigoPaís Número"
-                value={phoneNumber}
-                onChange={(event) => setPhoneNumber(event.target.value)}
-                className="w-full px-5 py-3 text-base border-2 border-pink-200 rounded-full shadow-sm focus:ring-2 focus:ring-pink-400 focus:border-pink-400"
+                id="pseudoAuthor"
+                type="text"
+                placeholder="Ej: JusticieroAnónimo"
+                value={pseudoAuthor}
+                onChange={(e) => setPseudoAuthor(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-pink-500 focus:border-pink-500"
                 required
               />
             </div>
           </div>
-
-          <div className="bg-pink-50/70 border border-pink-200 rounded-2xl p-6">
-            <h2 className="text-lg font-semibold text-pink-600 mb-2">Tus datos verificados <span className="text-red-500">*</span></h2>
-            <p className="text-sm text-gray-500 mb-4">Solo el equipo moderador verá esta información para validar la denuncia.</p>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label htmlFor="reporterName" className="block text-sm font-medium text-gray-700 mb-1">
-                  Tu nombre completo <span className="text-red-500">*</span>
-                </label>
-                <input
-                  id="reporterName"
-                  type="text"
-                  placeholder="Nombre y apellido"
-                  value={reporterName}
-                  onChange={(event) => setReporterName(event.target.value)}
-                  className="w-full px-5 py-3 text-base border-2 border-pink-200 rounded-full shadow-sm focus:ring-2 focus:ring-pink-400 focus:border-pink-400"
-                  required
-                />
-              </div>
-              <div>
-                <label htmlFor="reporterPhone" className="block text-sm font-medium text-gray-700 mb-1">
-                  Tu número de celular <span className="text-red-500">*</span>
-                </label>
-                <input
-                  id="reporterPhone"
-                  type="tel"
-                  placeholder="Tu celular..."
-                  value={reporterPhone}
-                  onChange={(event) => setReporterPhone(event.target.value)}
-                  className="w-full px-5 py-3 text-base border-2 border-pink-200 rounded-full shadow-sm focus:ring-2 focus:ring-pink-400 focus:border-pink-400"
-                  inputMode="tel"
-                  required
-                />
-              </div>
-            </div>
-          </div>
-
+          
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Categoría <span className="text-red-500">*</span>
             </label>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-              {Object.entries(CATEGORIES).map(([key, value]) => {
-                const typedKey = key as ReviewCategory;
-                const isSelected = category === typedKey;
-                return (
-                  <button
-                    key={key}
-                    type="button"
-                    onClick={() => setCategory(typedKey)}
-                    className={`flex items-center justify-center gap-2 px-4 py-2 border-2 rounded-full text-sm transition-all ${isSelected ? 'bg-pink-500 text-white ring-2 ring-pink-300 border-pink-500' : 'bg-white border-pink-200 hover:bg-pink-50'}`}
-                  >
-                    <span>{value.emoji}</span>
-                    <span>{value.label}</span>
-                  </button>
-                );
-              })}
+              {Object.entries(CATEGORIES).map(([key, value]) => (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => setCategory(key as ReviewCategory)}
+                  className={`flex items-center justify-center gap-2 p-3 border rounded-lg text-sm transition-all ${category === key ? 'bg-pink-500 text-white ring-2 ring-pink-300' : 'bg-gray-100 hover:bg-pink-100'}`}
+                >
+                  <span>{value.emoji}</span>
+                  <span>{value.label}</span>
+                </button>
+              ))}
             </div>
           </div>
 
@@ -354,34 +169,26 @@ const NewReviewPage: React.FC = () => {
             <textarea
               id="text"
               value={text}
-              onChange={(event) => setText(event.target.value)}
+              onChange={(e) => setText(e.target.value)}
               maxLength={200}
               rows={4}
-              className="w-full px-5 py-3 text-base border-2 border-pink-200 rounded-2xl shadow-sm focus:ring-2 focus:ring-pink-400 focus:border-pink-400"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-pink-500 focus:border-pink-500"
               required
             />
-            <p className="text-xs text-right text-gray-500 mt-1">{text.length}/200</p>
+             <p className="text-xs text-right text-gray-500 mt-1">{text.length}/200</p>
           </div>
 
           <div>
-            <label htmlFor="evidence" className="block text-sm font-medium text-gray-700 mb-1">
+             <label htmlFor="evidence" className="block text-sm font-medium text-gray-700 mb-1">
               Adjuntar evidencia (opcional, .jpg, .png)
             </label>
-            <input
-              id="evidence"
-              type="file"
-              accept={ACCEPTED_MIME_TYPES.join(',')}
-              onChange={handleFileChange}
-              className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-pink-50 file:text-pink-700 hover:file:bg-pink-100"
+            <input 
+                id="evidence"
+                type="file"
+                accept="image/png, image/jpeg"
+                onChange={handleFileChange}
+                className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-pink-50 file:text-pink-700 hover:file:bg-pink-100"
             />
-            {(evidenceAttachment || isLoading) && (
-              <div className="mt-3">
-                <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
-                  <div className="h-2 rounded-full bg-pink-500 transition-all" style={{ width: `${uploadProgress}%` }}></div>
-                </div>
-                <p className="text-xs text-gray-500 mt-1">Cargando imagen... {uploadProgress}%</p>
-              </div>
-            )}
             {evidencePreview && (
               <div className="mt-4">
                 <p className="text-sm font-medium text-gray-700 mb-1">Vista previa:</p>
@@ -391,10 +198,10 @@ const NewReviewPage: React.FC = () => {
           </div>
 
           {error && <p className="text-red-500 text-sm text-center">{error}</p>}
-
+          
           <div className="text-center text-xs text-gray-700 bg-yellow-100/80 border border-yellow-300 p-3 rounded-lg">
             <p className="font-bold text-yellow-800">
-              <i className="fa-solid fa-triangle-exclamation mr-1"></i>Aviso Importante
+                <i className="fa-solid fa-triangle-exclamation mr-1"></i>Aviso Importante
             </p>
             <p>Está estrictamente prohibido incluir nombres o cualquier información de menores de edad. El incumplimiento de esta norma resultará en la eliminación de la reseña.</p>
           </div>
@@ -402,7 +209,7 @@ const NewReviewPage: React.FC = () => {
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full py-4 px-4 text-xl font-bold text-white bg-pink-500 rounded-full shadow-lg ring-2 ring-sky-300 hover:bg-pink-600 transform hover:scale-[1.01] transition-all disabled:bg-gray-400 disabled:cursor-wait"
+            className="w-full py-3 px-4 text-lg font-bold text-white bg-pink-500 rounded-full shadow-lg hover:bg-pink-600 transform hover:scale-105 transition-all disabled:bg-gray-400 disabled:cursor-wait"
           >
             {isLoading ? 'Publicando...' : 'Publicar Reseña'}
           </button>

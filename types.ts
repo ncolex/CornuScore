@@ -18,13 +18,12 @@ export interface Review {
   id: string;
   category: ReviewCategory;
   text: string;
-  score?: number;
+  score: number;
   date: string; // ISO 8601 format
   pseudoAuthor: string;
   confirmations: number;
   evidenceUrl?: string;
   personReviewed?: string; // For user profile page
-  rating?: string;
 }
 
 export interface PersonProfile {
@@ -34,8 +33,6 @@ export interface PersonProfile {
   totalScore: number;
   reputation: ReputationLevel;
   reviews: Review[];
-  reviewsCount?: number;
-  semaforoEmoji?: string;
 }
 
 export interface UserProfile {
@@ -51,26 +48,11 @@ export interface WebCheckResult {
     title: string;
     link: string;
     snippet: string;
+    status?: 'found' | 'not_found' | 'info';
 }
 
-export interface SubmitReviewEvidence {
-  dataUrl: string;
-  filename: string;
-  mimeType: string;
-}
-
-export interface SubmitReviewPayload {
-  personIdentifier: string;
-  nickname?: string;
-  email?: string;
-  phoneNumber: string;
-  instagram?: string;
-  country: string;
-  category: ReviewCategory;
-  rating: string;
-  score?: number;
-  text: string;
-  reporterName: string;
-  reporterPhone: string;
-  evidence?: SubmitReviewEvidence;
+export interface InstagramSearchResult {
+  username: string;
+  profilePicUrl: string;
+  fullName: string;
 }

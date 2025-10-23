@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import HeartIcon from '../components/icons/HeartIcon';
@@ -8,7 +7,7 @@ const HomePage: React.FC = () => {
   const [query, setQuery] = useState('');
   const navigate = useNavigate();
 
-  const handleSearch = (e: React.FormEvent) => {
+  const handleSearch = (e: React.FormEvent | React.MouseEvent) => {
     e.preventDefault();
     if (query.trim()) {
       navigate(`/results/${encodeURIComponent(query.trim())}`);
@@ -29,7 +28,7 @@ const HomePage: React.FC = () => {
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Ingresar nombre, apodo, celular o Instagram..."
+            placeholder="Ingresar usuario de Instagram, nombre, teléfono..."
             className="w-full pl-5 pr-14 py-4 text-lg border-2 border-pink-200 rounded-full shadow-lg focus:ring-2 focus:ring-pink-400 focus:border-pink-400 outline-none transition-all"
           />
           <button 

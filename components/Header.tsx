@@ -1,20 +1,11 @@
 import React from 'react';
-import { Link, NavLink, useNavigate } from 'react-router-dom';
+import { Link, NavLink } from 'react-router-dom';
 import HeartIcon from './icons/HeartIcon';
-import { useAuth } from '../contexts/AuthContext';
 
 const Header: React.FC = () => {
-  const { user, logout } = useAuth();
-  const navigate = useNavigate();
-
   const activeLinkStyle = {
     color: '#ec4899',
     textDecoration: 'underline',
-  };
-
-  const handleLogout = () => {
-    logout();
-    navigate('/');
   };
 
   return (
@@ -39,30 +30,6 @@ const Header: React.FC = () => {
             <NavLink to="/ranking" style={({ isActive }) => (isActive ? activeLinkStyle : undefined)}>
               Ranking
             </NavLink>
-          </li>
-           <li>
-            <NavLink to="/profile" style={({ isActive }) => (isActive ? activeLinkStyle : undefined)}>
-              Perfil
-            </NavLink>
-          </li>
-          {user && (
-            <li>
-              <NavLink to="/ai-generator" style={({ isActive }) => (isActive ? activeLinkStyle : undefined)} className="flex items-center gap-1">
-                <i className="fa-solid fa-wand-magic-sparkles text-pink-500"></i>
-                AI Gen
-              </NavLink>
-            </li>
-          )}
-          <li>
-            {user ? (
-              <button onClick={handleLogout} className="bg-pink-500 text-white px-3 py-1 rounded-full text-sm font-bold hover:bg-pink-600">
-                Logout
-              </button>
-            ) : (
-              <NavLink to="/login" className="bg-pink-500 text-white px-3 py-1 rounded-full text-sm font-bold hover:bg-pink-600">
-                Login
-              </NavLink>
-            )}
           </li>
         </ul>
       </nav>

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { GoogleGenAI } from '@google/genai';
-import { ReviewCategory, SubmitReviewPayload } from '../types';
+import { GoogleGenAI, Type } from '@google/genai';
+import { ReviewCategory } from '../types';
+import { submitReview } from '../services/airtableService';
 import { CATEGORIES } from '../constants';
 import GeneratedReviewCard from '../components/GeneratedReviewCard';
 
@@ -9,7 +10,6 @@ interface GeneratedResult {
     text: string;
     country: string;
     category: ReviewCategory;
-    sources: any[];
 }
 
 const AIGeneratorPage: React.FC = () => {
@@ -26,14 +26,30 @@ const AIGeneratorPage: React.FC = () => {
         setSources([]);
 
         try {
+            if (!process.env.API_KEY) {
+                throw new Error("API_KEY environment variable not set");
+            }
+
             const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-            const prompt = `Busca en internet usando Google Search sobre "${topic}". Para cada evento encontrado, extrae la siguiente información: el nombre de una de las personas involucradas (personIdentifier), un resumen del evento en menos de 200 caracteres (text), el país principal asociado a la persona (country), y clasifica el motivo en una de estas categorías: 'INFIDELITY', 'THEFT', 'BETRAYAL', 'TOXIC', 'POSITIVE'. Devuelve los resultados como un array de objetos JSON. Tu respuesta DEBE ser únicamente un array de objetos JSON válido, sin texto introductorio, explicaciones o \`\`\`json\` markers. El formato es: [{"personIdentifier": "...", "text": "...", "country": "...", "category": "..."}]`;
             
             const response = await ai.models.generateContent({
                 model: 'gemini-2.5-flash',
-                contents: prompt,
+                contents: `Busca en internet usando Google Search sobre "${topic}". Para cada evento encontrado, extrae la siguiente información: el nombre de una de las personas involucradas (personIdentifier), un resumen del evento en menos de 200 caracteres (text), el país principal asociado a la persona (country), y clasifica el motivo en una de estas categorías: 'INFIDELITY', 'THEFT', 'BETRAYAL', 'TOXIC', 'POSITIVE'.`,
                 config: {
-                    tools: [{ googleSearch: {} }]
+                    tools: [{ googleSearch: {} }],
+                    responseMimeType: 'application/json',
+                    responseSchema: {
+                        type: Type.ARRAY,
+                        items: {
+                            type: Type.OBJECT,
+                            properties: {
+                                personIdentifier: { type: Type.STRING },
+                                text: { type: Type.STRING },
+                                country: { type: Type.STRING },
+                                category: { type: Type.STRING }
+                            }
+                        }
+                    }
                 }
             });
 
@@ -44,12 +60,12 @@ const AIGeneratorPage: React.FC = () => {
             setSources(groundingSources);
 
             if (Array.isArray(parsedResults)) {
-                setResults(parsedResults.filter(r => r.personIdentifier && r.text && r.category && r.country && CATEGORIES[r.category]));
+                setResults(parsedResults.filter(r => r.personIdentifier && r.text && r.category && r.country && CATEGORIES[r.category as ReviewCategory]));
             } else {
                 throw new Error("La respuesta de la IA no es un array.");
             }
 
-        } catch (e) {
+        } catch (e: any) {
             setError('Error al generar contenido. La respuesta de la IA puede no ser un JSON válido o la búsqueda no arrojó resultados estructurables. Intenta con otro tema.');
             console.error(e);
         } finally {
@@ -58,35 +74,14 @@ const AIGeneratorPage: React.FC = () => {
     };
 
     const handleAddReview = async (result: GeneratedResult) => {
-        try {
-            const rating = CATEGORIES[result.category]?.score >= 0 ? 'POSITIVE' : 'NEGATIVE';
-            const payload: SubmitReviewPayload = {
-                personIdentifier: result.personIdentifier,
-                country: result.country,
-                category: result.category,
-                rating,
-                score: CATEGORIES[result.category]?.score,
-                text: result.text,
-                phoneNumber: '0000000000',
-                reporterName: 'AI Analyst',
-                reporterPhone: '0000000000',
-            };
-
-            const response = await fetch('/.netlify/functions/submitReview', {
-                method: 'POST',
-                body: JSON.stringify(payload),
-            });
-
-            if (!response.ok) {
-                throw new Error('Failed to add AI-generated review');
-            }
-
-            const json = await response.json();
-            return json.success === true;
-        } catch (err) {
-            console.error('Failed to add generated review', err);
-            return false;
-        }
+        const score = CATEGORIES[result.category]?.score ?? 0;
+        const success = await submitReview({
+            ...result,
+            score,
+            pseudoAuthor: 'AI Analyst',
+            evidenceUrl: sources.length > 0 ? sources[0].web.uri : undefined, // Use first source as evidence
+        });
+        return success;
     };
 
     return (

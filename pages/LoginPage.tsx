@@ -1,11 +1,10 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../hooks/useAuth';
 import HeartIcon from '../components/icons/HeartIcon';
 
 const LoginPage: React.FC = () => {
   const [phoneNumber, setPhoneNumber] = useState('');
-  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const { login } = useAuth();
   const navigate = useNavigate();
@@ -15,12 +14,12 @@ const LoginPage: React.FC = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (phoneNumber.trim().length > 5 && password.trim().length > 0) {
+    if (phoneNumber.trim().length > 5) {
       setError('');
       login(phoneNumber.trim());
       navigate(from, { replace: true });
     } else {
-      setError('Por favor, ingresa un teléfono y contraseña válidos.');
+      setError('Por favor, ingresa un número de teléfono válido.');
     }
   };
 
@@ -39,7 +38,7 @@ const LoginPage: React.FC = () => {
         <HeartIcon className="w-16 h-16 text-pink-500 mb-4 mx-auto"/>
         <h1 className="text-3xl font-bold text-gray-800 mb-2">Iniciar Sesión</h1>
         <p className="text-gray-600 mb-6">
-          Accede para ver perfiles completos y crear reseñas.
+          Ingresa con tu teléfono para continuar.
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -50,17 +49,6 @@ const LoginPage: React.FC = () => {
               value={phoneNumber}
               onChange={(e) => setPhoneNumber(e.target.value)}
               placeholder="Número de Teléfono"
-              className="w-full px-4 py-3 text-md border border-gray-300 rounded-lg shadow-sm focus:ring-pink-500 focus:border-pink-500 outline-none transition-all"
-              required
-            />
-          </div>
-          <div>
-            <input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Contraseña"
               className="w-full px-4 py-3 text-md border border-gray-300 rounded-lg shadow-sm focus:ring-pink-500 focus:border-pink-500 outline-none transition-all"
               required
             />

@@ -1,14 +1,12 @@
 import React from 'react';
 import { PersonProfile } from '../types';
 import { REPUTATION_LEVELS } from '../constants';
-import LoginPrompt from './LoginPrompt';
 
 interface ReputationMeterProps {
   profile: PersonProfile;
-  blurred?: boolean;
 }
 
-const ReputationMeter: React.FC<ReputationMeterProps> = ({ profile, blurred = false }) => {
+const ReputationMeter: React.FC<ReputationMeterProps> = ({ profile }) => {
   const reputationDetails = REPUTATION_LEVELS[profile.reputation];
   
   const getProgressBarWidth = () => {
@@ -22,8 +20,7 @@ const ReputationMeter: React.FC<ReputationMeterProps> = ({ profile, blurred = fa
 
   return (
     <div className="relative">
-      {blurred && <LoginPrompt message="Inicia sesión para ver el perfil completo." />}
-      <div className={`bg-white/80 backdrop-blur-sm p-6 rounded-2xl shadow-lg border border-white/30 text-center ${blurred ? 'filter blur-md pointer-events-none' : ''}`}>
+      <div className="bg-white/80 backdrop-blur-sm p-6 rounded-2xl shadow-lg border border-white/30 text-center">
         <h2 className="text-xl font-bold text-gray-800 mb-1">Reputación de</h2>
         <p className="text-2xl font-bold text-pink-500 mb-1 capitalize">{profile.identifiers[0]}</p>
         <p className="text-sm text-gray-500 mb-4 flex items-center justify-center gap-1">
@@ -47,7 +44,7 @@ const ReputationMeter: React.FC<ReputationMeterProps> = ({ profile, blurred = fa
             style={{ width: getProgressBarWidth() }}
           ></div>
         </div>
-        <p className="text-sm text-gray-500 mt-2">{profile.reviewsCount ?? profile.reviews.length} reseña(s) encontrada(s).</p>
+        <p className="text-sm text-gray-500 mt-2">{profile.reviews.length} reseña(s) encontrada(s).</p>
       </div>
     </div>
   );

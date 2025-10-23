@@ -1,46 +1,22 @@
 {
-  "name": "cornuscore",
+  "name": "cornuscore-----❤️--/--💔",
   "private": true,
   "version": "0.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview",
-    "start:vite": "vite",
-    "start:netlify": "netlify dev",
-    "deploy:netlify": "netlify deploy --prod",
-    "push": "sh -c 'git add -A && git commit -m \"${COMMIT_MSG:-chore: update}\" || true && git push origin ${BRANCH:-main}'",
-    "db:generate": "drizzle-kit generate",
-    "db:migrate": "netlify dev:exec drizzle-kit migrate",
-    "db:studio": "netlify dev:exec drizzle-kit studio"
+    "preview": "vite preview"
   },
   "dependencies": {
-    "@google/genai": "^1.22.0",
-    "@netlify/blobs": "^6.3.0",
-    "@netlify/neon": "^0.1.0",
-    "bcrypt": "^5.1.1",
-    "drizzle-orm": "^0.44.6",
-    "jsonwebtoken": "^9.0.2",
-    "node-fetch": "^3.3.2",
-    "openai": "^6.1.0",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "react-router-dom": "^7.9.3",
-    "sharp": "^0.33.4"
+    "@google/genai": "^1.22.0"
   },
   "devDependencies": {
-    "@neondatabase/serverless": "^0.10.0",
-    "@netlify/functions": "^2.7.0",
-    "@types/bcrypt": "^5.0.2",
-    "@types/jsonwebtoken": "^9.0.6",
     "@types/node": "^22.14.0",
     "@vitejs/plugin-react": "^5.0.0",
-    "autoprefixer": "^10.4.20",
-    "drizzle-kit": "^0.31.5",
-    "postcss": "^8.4.47",
-    "tailwindcss": "^3.4.13",
-    "ts-node": "^10.9.2",
     "typescript": "~5.8.2",
     "vite": "^6.2.0"
   }
