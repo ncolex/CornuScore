@@ -1,19 +1,12 @@
 import { Review, PersonProfile, UserProfile, ReviewCategory, ReputationLevel, WebCheckResult, InstagramSearchResult, RegisteredUser } from '../types';
+import { getInstagramAvatarUrl } from './avatar';
 
 // --- NOTA PARA LA BASE DE DATOS ---
 // Los siguientes datos son de prueba (mock data).
 // En una implementación de producción, estas funciones se conectarían a la base de datos de Neon
 // a través de una API backend para obtener y modificar datos reales.
 
-// --- Utility Function for Realistic and Consistent Profile Pics ---
-const getDeterministicProfilePic = (username: string): string => {
-    const hash = username.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-    // This service provides realistic, consistent photos based on a seed.
-    // It alternates between male and female avatars for variety.
-    const gender = hash % 2 === 0 ? 'male' : 'female';
-    const avatarId = hash % 70; // The service has about 70 avatars per gender
-    return `https://xsgames.co/randomusers/assets/avatars/${gender}/${avatarId}.jpg`;
-};
+// Avatar utilities moved to services/avatar.ts
 
 
 // MOCK DATA
@@ -299,8 +292,8 @@ export const searchInstagramProfiles = async (query: string): Promise<InstagramS
 
     const allMockProfiles: InstagramSearchResult[] = allMockProfilesData.map(p => ({
         ...p,
-        // Use the specific URL if provided, otherwise generate one deterministically
-        profilePicUrl: p.profilePicUrl || getDeterministicProfilePic(p.username),
+        // Prefer real public avatar (Unavatar). If not provided explicitly, use Unavatar URL.
+        profilePicUrl: p.profilePicUrl || getInstagramAvatarUrl(p.username),
     }));
 
 
