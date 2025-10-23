@@ -3,6 +3,9 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
 import { HashRouter } from 'react-router-dom';
+import { initDb } from './services/dbService';
+
+initDb();
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {

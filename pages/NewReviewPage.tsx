@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { submitReview } from '../services/airtableService';
+import { submitReview } from '../services/dbService';
 import { CATEGORIES } from '../constants';
 import { ReviewCategory } from '../types';
 

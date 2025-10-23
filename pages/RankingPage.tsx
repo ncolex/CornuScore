@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getRankings } from '../services/airtableService';
+import { getRankings } from '../services/dbService';
 import { PersonProfile } from '../types';
 import RankingList from '../components/RankingList';
 

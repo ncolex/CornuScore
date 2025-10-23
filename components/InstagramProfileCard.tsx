@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { PersonProfile, InstagramSearchResult } from '../types';
-import { searchInstagramProfiles } from '../services/airtableService';
+import { searchInstagramProfiles } from '../services/dbService';
 import Avatar from './Avatar';
 
 interface InstagramProfileCardProps {

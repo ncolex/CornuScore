@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import HeartIcon from '../components/icons/HeartIcon';
-import { registerUser } from '../services/airtableService';
+import { registerUser } from '../services/dbService';
 
 const RegisterPage: React.FC = () => {
   const [phone, setPhone] = useState('');
