@@ -10,7 +10,9 @@ const NewReviewPage: React.FC = () => {
   const [personIdentifier, setPersonIdentifier] = useState('');
   const [country, setCountry] = useState('Argentina');
   const [otherCountry, setOtherCountry] = useState('');
-  const [pseudoAuthor, setPseudoAuthor] = useState('');
+  const [reviewerEmail, setReviewerEmail] = useState('');
+  const [reviewerInstagram, setReviewerInstagram] = useState('');
+  const [reviewerPhone, setReviewerPhone] = useState('');
   const [category, setCategory] = useState<ReviewCategory | null>(null);
   const [text, setText] = useState('');
   const [evidence, setEvidence] = useState<File | null>(null);
@@ -36,7 +38,7 @@ const NewReviewPage: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!personIdentifier || !country || (country === 'Otro' && !otherCountry.trim()) || !pseudoAuthor || !category || !text) {
+    if (!personIdentifier || !country || (country === 'Otro' && !otherCountry.trim()) || !reviewerEmail || !reviewerInstagram || !reviewerPhone || !category || !text) {
       setError('Por favor, completa todos los campos obligatorios.');
       return;
     }
@@ -64,7 +66,7 @@ const NewReviewPage: React.FC = () => {
     const score = CATEGORIES[category].score;
     const finalCountry = country === 'Otro' ? otherCountry.trim() : country;
 
-    const success = await submitReview({ personIdentifier, country: finalCountry, category, text, score, pseudoAuthor, evidenceUrl });
+    const success = await submitReview({ personIdentifier, country: finalCountry, category, text, score, reviewerEmail, reviewerInstagram, reviewerPhone, evidenceUrl });
     setIsLoading(false);
 
     if (success) {
@@ -83,63 +85,72 @@ const NewReviewPage: React.FC = () => {
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-6">
-            <div>
-              <label htmlFor="identifier" className="block text-sm font-medium text-gray-700 mb-1">
-                Usuario de Instagram de la persona <span className="text-red-500">*</span>
-              </label>
-               <div className="relative">
-                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                   <i className="fa-brands fa-instagram text-gray-400"></i>
-                 </div>
-                 <input
-                   id="identifier"
-                   type="text"
-                   placeholder="@usuario_de_instagram"
-                   value={personIdentifier}
-                   onChange={(e) => setPersonIdentifier(e.target.value)}
-                   className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-pink-500 focus:border-pink-500"
-                   required
-                 />
-               </div>
-            </div>
              <div>
-              <label htmlFor="country" className="block text-sm font-medium text-gray-700 mb-1">
-                País / Región <span className="text-red-500">*</span>
-              </label>
-              <select
-                id="country"
-                value={country}
-                onChange={(e) => setCountry(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-pink-500 focus:border-pink-500"
-                required
-              >
-                <option value="" disabled>Selecciona un país</option>
-                {countryList.map(c => <option key={c} value={c}>{c}</option>)}
-              </select>
-              {country === 'Otro' && (
-                <input
-                  type="text"
-                  placeholder="Por favor, especifica el país"
-                  value={otherCountry}
-                  onChange={(e) => setOtherCountry(e.target.value)}
-                  className="w-full mt-2 px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-pink-500 focus:border-pink-500"
-                  required
-                />
-              )}
+                <h3 className="text-lg font-semibold text-gray-800 border-b pb-2 mb-4">Datos de la Persona Reseñada</h3>
+                <div className="space-y-4">
+                     <div>
+                      <label htmlFor="identifier" className="block text-sm font-medium text-gray-700 mb-1">
+                        Usuario de Instagram de la persona <span className="text-red-500">*</span>
+                      </label>
+                       <div className="relative">
+                         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                           <i className="fa-brands fa-instagram text-gray-400"></i>
+                         </div>
+                         <input
+                           id="identifier"
+                           type="text"
+                           placeholder="@usuario_de_instagram"
+                           value={personIdentifier}
+                           onChange={(e) => setPersonIdentifier(e.target.value)}
+                           className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-pink-500 focus:border-pink-500"
+                           required
+                         />
+                       </div>
+                    </div>
+                     <div>
+                      <label htmlFor="country" className="block text-sm font-medium text-gray-700 mb-1">
+                        País / Región <span className="text-red-500">*</span>
+                      </label>
+                      <select
+                        id="country"
+                        value={country}
+                        onChange={(e) => setCountry(e.target.value)}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-pink-500 focus:border-pink-500"
+                        required
+                      >
+                        <option value="" disabled>Selecciona un país</option>
+                        {countryList.map(c => <option key={c} value={c}>{c}</option>)}
+                      </select>
+                      {country === 'Otro' && (
+                        <input
+                          type="text"
+                          placeholder="Por favor, especifica el país"
+                          value={otherCountry}
+                          onChange={(e) => setOtherCountry(e.target.value)}
+                          className="w-full mt-2 px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-pink-500 focus:border-pink-500"
+                          required
+                        />
+                      )}
+                    </div>
+                </div>
             </div>
+            
              <div>
-              <label htmlFor="pseudoAuthor" className="block text-sm font-medium text-gray-700 mb-1">
-                Tu Seudónimo (será público) <span className="text-red-500">*</span>
-              </label>
-              <input
-                id="pseudoAuthor"
-                type="text"
-                placeholder="Ej: JusticieroAnónimo"
-                value={pseudoAuthor}
-                onChange={(e) => setPseudoAuthor(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-pink-500 focus:border-pink-500"
-                required
-              />
+                <h3 className="text-lg font-semibold text-gray-800 border-b pb-2 mb-4">Tus Datos (Obligatorio, no público)</h3>
+                 <div className="space-y-4">
+                    <div>
+                        <label htmlFor="reviewerEmail" className="block text-sm font-medium text-gray-700 mb-1">Tu Correo Electrónico <span className="text-red-500">*</span></label>
+                        <input id="reviewerEmail" type="email" placeholder="tu@correo.com" value={reviewerEmail} onChange={(e) => setReviewerEmail(e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-pink-500 focus:border-pink-500" required />
+                    </div>
+                    <div>
+                        <label htmlFor="reviewerInstagram" className="block text-sm font-medium text-gray-700 mb-1">Tu Usuario de Instagram <span className="text-red-500">*</span></label>
+                        <input id="reviewerInstagram" type="text" placeholder="@tu_usuario" value={reviewerInstagram} onChange={(e) => setReviewerInstagram(e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-pink-500 focus:border-pink-500" required />
+                    </div>
+                    <div>
+                        <label htmlFor="reviewerPhone" className="block text-sm font-medium text-gray-700 mb-1">Tu Teléfono <span className="text-red-500">*</span></label>
+                        <input id="reviewerPhone" type="tel" placeholder="+54 9 11 12345678" value={reviewerPhone} onChange={(e) => setReviewerPhone(e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-pink-500 focus:border-pink-500" required />
+                    </div>
+                </div>
             </div>
           </div>
           

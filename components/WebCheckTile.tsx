@@ -7,22 +7,25 @@ interface WebCheckTileProps {
 }
 
 const WebCheckTile: React.FC<WebCheckTileProps> = ({ result }) => {
-  // Special case for Badoo "found" status
-  if (result.source === 'Badoo' && result.status === 'found') {
+  // Special case for results with a screenshot
+  if (result.screenshotUrl) {
     return (
        <a 
         href={result.link} 
         target="_blank" 
         rel="noopener noreferrer" 
-        className="block bg-red-50/80 backdrop-blur-sm p-4 rounded-xl shadow-lg border-2 border-red-300 transition-all transform hover:scale-[1.03]"
+        className="block bg-gray-800 p-4 rounded-xl shadow-lg border border-red-400/50 transition-all transform hover:scale-[1.03] group overflow-hidden relative"
       >
-        <div className="flex items-center gap-4">
-          <i className="fa-solid fa-heart-crack text-red-500 text-4xl text-center w-10"></i>
-          <div className="flex-grow">
-            <p className="font-bold text-red-800 text-lg leading-tight">{result.title}</p>
-            <p className="text-sm text-red-700 mt-1">{result.snippet}</p>
-          </div>
-          <i className="fa-solid fa-chevron-right text-red-400 self-center"></i>
+        <img src={result.screenshotUrl} alt={`Captura de ${result.source}`} className="absolute inset-0 w-full h-full object-cover opacity-30 group-hover:opacity-50 transition-opacity duration-300" />
+        <div className="relative">
+            <div className="flex items-center gap-4">
+                <i className="fa-solid fa-heart-crack text-red-500 text-4xl text-center w-10"></i>
+                <div className="flex-grow">
+                    <p className="font-bold text-white text-lg leading-tight">{result.title}</p>
+                    <p className="text-sm text-gray-200 mt-1">{result.snippet}</p>
+                </div>
+                <i className="fa-solid fa-chevron-right text-gray-300 self-center"></i>
+            </div>
         </div>
       </a>
     );

@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { getUserProfile } from '../services/airtableService';
-import { UserProfile } from '../types';
+import { UserProfile, Review } from '../types';
 import ReviewCard from '../components/ReviewCard';
 import { useAuth } from '../hooks/useAuth';
 
 const ProfilePage: React.FC = () => {
   const { user } = useAuth();
   const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [userReviews, setUserReviews] = useState<Review[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -14,8 +15,8 @@ const ProfilePage: React.FC = () => {
       setIsLoading(true);
       try {
         const userProfileData = await getUserProfile();
-        // In a real app, this would be fetched based on the logged-in user's ID
         setProfile(userProfileData);
+        setUserReviews(userProfileData.reviews);
       } catch (error) {
         console.error("Failed to fetch user profile", error);
       } finally {
@@ -24,6 +25,19 @@ const ProfilePage: React.FC = () => {
     };
     fetchProfile();
   }, []);
+
+  const handleDeleteReview = (reviewId: string) => {
+    if (window.confirm('¿Estás seguro de que quieres eliminar esta reseña? Esta acción no se puede deshacer.')) {
+      // In a real app, this would call an API to delete the review from the server.
+      // For this mock, we just filter it out from the local state.
+      setUserReviews(currentReviews => currentReviews.filter(review => review.id !== reviewId));
+    }
+  };
+
+  const handleEditReview = (reviewId: string) => {
+    // In a real app, this would open a modal or navigate to an edit page.
+    alert(`La funcionalidad para editar la reseña ${reviewId} aún no está implementada.`);
+  };
 
   if (isLoading) {
     return (
@@ -59,11 +73,18 @@ const ProfilePage: React.FC = () => {
 
       <div>
         <h2 className="text-2xl font-bold text-gray-800 mb-4 text-center">
-          Mis Reseñas Publicadas ({profile.reviews.length})
+          Mis Reseñas Publicadas ({userReviews.length})
         </h2>
         <div className="space-y-4">
-          {profile.reviews.length > 0 ? (
-            profile.reviews.map(review => <ReviewCard key={review.id} review={review} />)
+          {userReviews.length > 0 ? (
+            userReviews.map(review => 
+              <ReviewCard 
+                key={review.id} 
+                review={review} 
+                onEdit={() => handleEditReview(review.id)}
+                onDelete={() => handleDeleteReview(review.id)}
+              />
+            )
           ) : (
             <p className="text-center text-gray-500 bg-white/80 p-6 rounded-xl shadow-md">
               Aún no has publicado ninguna reseña. ¡Anímate a ser el primero!

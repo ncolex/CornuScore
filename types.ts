@@ -49,6 +49,7 @@ export interface WebCheckResult {
     link: string;
     snippet: string;
     status?: 'found' | 'not_found' | 'info';
+    screenshotUrl?: string;
 }
 
 export interface InstagramSearchResult {

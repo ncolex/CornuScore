@@ -4,9 +4,11 @@ import { CATEGORIES } from '../constants';
 
 interface ReviewCardProps {
   review: Review;
+  onEdit?: (id: string) => void;
+  onDelete?: (id: string) => void;
 }
 
-const ReviewCard: React.FC<ReviewCardProps> = ({ review }) => {
+const ReviewCard: React.FC<ReviewCardProps> = ({ review, onEdit, onDelete }) => {
   const [confirmations, setConfirmations] = useState(review.confirmations);
   const [isConfirmed, setIsConfirmed] = useState(false);
 
@@ -46,16 +48,37 @@ const ReviewCard: React.FC<ReviewCardProps> = ({ review }) => {
         </div>
       )}
       
-      <div className="flex justify-between items-center text-sm">
+      <div className="flex justify-between items-center text-sm pt-4 mt-4 border-t border-gray-200">
         <span className="text-gray-500">Autor: <span className="font-semibold">{review.pseudoAuthor}</span></span>
-        <button 
-          onClick={handleConfirm}
-          className={`flex items-center gap-2 px-3 py-1 rounded-full transition-colors ${isConfirmed ? 'bg-pink-500 text-white' : 'bg-gray-200 text-gray-700'} hover:bg-pink-200`}
-        >
-          <i className="fa-solid fa-check"></i>
-          <span>{isConfirmed ? 'Confirmado' : 'Yo viví algo similar'}</span>
-          <span className="font-bold">{confirmations}</span>
-        </button>
+        
+        <div className="flex items-center gap-2">
+          {onEdit && (
+            <button
+              onClick={() => onEdit(review.id)}
+              className="flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold text-gray-700 bg-gray-200 hover:bg-gray-300 transition-colors"
+              aria-label="Editar reseña"
+            >
+              <i className="fa-solid fa-pencil"></i>
+            </button>
+          )}
+          {onDelete && (
+            <button
+              onClick={() => onDelete(review.id)}
+              className="flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold text-red-700 bg-red-100 hover:bg-red-200 transition-colors"
+              aria-label="Eliminar reseña"
+            >
+              <i className="fa-solid fa-trash-can"></i>
+            </button>
+          )}
+          <button 
+            onClick={handleConfirm}
+            className={`flex items-center gap-2 px-3 py-1 rounded-full transition-colors ${isConfirmed ? 'bg-pink-500 text-white' : 'bg-gray-200 text-gray-700'} hover:bg-pink-200`}
+          >
+            <i className="fa-solid fa-check"></i>
+            <span className="hidden sm:inline">{isConfirmed ? 'Confirmado' : 'Confirmar'}</span>
+            <span className="font-bold">{confirmations}</span>
+          </button>
+        </div>
       </div>
     </div>
   );

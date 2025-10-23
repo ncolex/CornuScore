@@ -1,11 +1,20 @@
 import React from 'react';
-import { Link, NavLink } from 'react-router-dom';
+import { Link, NavLink, useNavigate } from 'react-router-dom';
 import HeartIcon from './icons/HeartIcon';
+import { useAuth } from '../hooks/useAuth';
 
 const Header: React.FC = () => {
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+
   const activeLinkStyle = {
     color: '#ec4899',
     textDecoration: 'underline',
+  };
+
+  const handleLogout = () => {
+    logout();
+    navigate('/');
   };
 
   return (
@@ -31,6 +40,26 @@ const Header: React.FC = () => {
               Ranking
             </NavLink>
           </li>
+          {user ? (
+            <>
+              <li>
+                <NavLink to="/profile" style={({ isActive }) => (isActive ? activeLinkStyle : undefined)}>
+                  Profile
+                </NavLink>
+              </li>
+              <li>
+                <button onClick={handleLogout} className="font-semibold text-gray-700 hover:text-pink-500">
+                  Logout
+                </button>
+              </li>
+            </>
+          ) : (
+            <li>
+              <NavLink to="/login" style={({ isActive }) => (isActive ? activeLinkStyle : undefined)}>
+                Login
+              </NavLink>
+            </li>
+          )}
         </ul>
       </nav>
     </header>

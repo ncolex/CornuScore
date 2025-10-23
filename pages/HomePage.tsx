@@ -28,7 +28,7 @@ const HomePage: React.FC = () => {
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Ingresar usuario de Instagram, nombre, teléfono..."
+            placeholder="Busca por usuario de Instagram, nombre o teléfono"
             className="w-full pl-5 pr-14 py-4 text-lg border-2 border-pink-200 rounded-full shadow-lg focus:ring-2 focus:ring-pink-400 focus:border-pink-400 outline-none transition-all"
           />
           <button 

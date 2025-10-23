@@ -1,5 +1,21 @@
 import { Review, PersonProfile, UserProfile, ReviewCategory, ReputationLevel, WebCheckResult, InstagramSearchResult } from '../types';
 
+// --- NOTA PARA LA BASE DE DATOS ---
+// Los siguientes datos son de prueba (mock data).
+// En una implementación de producción, estas funciones se conectarían a la base de datos de Neon
+// a través de una API backend para obtener y modificar datos reales.
+
+// --- Utility Function for Realistic and Consistent Profile Pics ---
+const getDeterministicProfilePic = (username: string): string => {
+    const hash = username.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    // This service provides realistic, consistent photos based on a seed.
+    // It alternates between male and female avatars for variety.
+    const gender = hash % 2 === 0 ? 'male' : 'female';
+    const avatarId = hash % 70; // The service has about 70 avatars per gender
+    return `https://xsgames.co/randomusers/assets/avatars/${gender}/${avatarId}.jpg`;
+};
+
+
 // MOCK DATA
 const mockReviews: Review[] = [
   // ... reviews for 'ana perez' ...
@@ -51,7 +67,8 @@ export const getProfileByQuery = async (query: string): Promise<PersonProfile | 
   return profile || null;
 };
 
-export const submitReview = async (reviewData: { personIdentifier: string, country: string, category: ReviewCategory, text: string, score: number, pseudoAuthor: string, evidenceUrl?: string }): Promise<boolean> => {
+// Fix: Update submitReview to accept an optional pseudoAuthor and make reviewer contact info optional.
+export const submitReview = async (reviewData: { personIdentifier: string, country: string, category: ReviewCategory, text: string, score: number, reviewerEmail?: string, reviewerInstagram?: string, reviewerPhone?: string, evidenceUrl?: string, pseudoAuthor?: string }): Promise<boolean> => {
     console.log("Submitting review:", reviewData);
     await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate network delay
 
@@ -63,7 +80,7 @@ export const submitReview = async (reviewData: { personIdentifier: string, count
         category: reviewData.category,
         text: reviewData.text,
         score: reviewData.score,
-        pseudoAuthor: reviewData.pseudoAuthor,
+        pseudoAuthor: reviewData.pseudoAuthor || reviewData.reviewerInstagram || 'Anónimo', // Use provided author, fallback to instagram, then to anonymous
         evidenceUrl: reviewData.evidenceUrl
     };
     mockReviews.push(newReview);
@@ -173,10 +190,11 @@ export const performWebChecks = async (query: string): Promise<WebCheckResult[]>
         results.push({
             id: `web-badoo`,
             source: 'Badoo',
-            title: `Se encontró un posible perfil en Badoo`,
-            link: `https://badoo.com/search/?q=${encodeURIComponent(query)}`,
-            snippet: `Se detectó una coincidencia. Se recomienda verificar manualmente.`,
-            status: 'found'
+            title: `Se encontró un perfil en Badoo`,
+            link: `https://badoo.com/es/search/?q=${encodeURIComponent(query)}`,
+            snippet: `Se detectó una coincidencia que requiere verificación manual.`,
+            status: 'found',
+            screenshotUrl: 'https://i.imgur.com/gfZiEol.png'
         });
     } else {
         results.push({
@@ -224,7 +242,6 @@ export const searchInstagramProfiles = async (query: string): Promise<InstagramS
     
     // --- Create search variants ---
     const searchVariants = new Set<string>([normalizedQuery]);
-    // If query is like "name123", also search for "name.123"
     const dotVariantMatch = normalizedQuery.match(/^([a-z_]+)(\d+)$/);
     if (dotVariantMatch) {
         searchVariants.add(`${dotVariantMatch[1]}.${dotVariantMatch[2]}`);
@@ -235,16 +252,24 @@ export const searchInstagramProfiles = async (query: string): Promise<InstagramS
         searchVariants.add(prefixVariantMatch[1]);
     }
 
-
-    const allMockProfiles = [
-        { username: 'anita.perez95', profilePicUrl: 'https://api.dicebear.com/8.x/adventurer-neutral/svg?seed=anita.perez95', fullName: 'Anita Pérez' },
-        { username: 'ana_perez_art', profilePicUrl: 'https://api.dicebear.com/8.x/adventurer-neutral/svg?seed=ana_perez_art', fullName: 'Ana Pérez | Artista' },
-        { username: 'charlyg', profilePicUrl: 'https://api.dicebear.com/8.x/adventurer-neutral/svg?seed=charlyg', fullName: 'Carlos Gómez' },
-        { username: 'sofilu', profilePicUrl: 'https://api.dicebear.com/8.x/adventurer-neutral/svg?seed=sofilu', fullName: 'Sofia Luna' },
-        { username: 'anaperez95', profilePicUrl: 'https://api.dicebear.com/8.x/adventurer-neutral/svg?seed=anaperez95', fullName: 'Ana Perez - Gamer' },
-        { username: 'nicobattaglia.33', profilePicUrl: 'https://api.dicebear.com/8.x/adventurer-neutral/svg?seed=nicobattaglia.33', fullName: 'Nico Battaglia' },
-        { username: 'nicobattaglia', profilePicUrl: 'https://api.dicebear.com/8.x/adventurer-neutral/svg?seed=nicobattaglia', fullName: 'Nico B.' },
+    // --- Update the mock profile data to use the deterministic function ---
+    const allMockProfilesData = [
+        { username: 'anita.perez95', fullName: 'Anita Pérez' },
+        { username: 'ana_perez_art', fullName: 'Ana Pérez | Artista' },
+        { username: 'charlyg', fullName: 'Carlos Gómez' },
+        { username: 'sofilu', fullName: 'Sofia Luna' },
+        { username: 'anaperez95', fullName: 'Ana Perez - Gamer' },
+        // Use the user-provided, specific image for this one profile as requested
+        { username: 'nicobattaglia.33', profilePicUrl: 'https://i.imgur.com/7Y25aL9.jpeg', fullName: 'Nico Battaglia' },
+        { username: 'nicobattaglia', fullName: 'Nico B.' },
     ];
+
+    const allMockProfiles: InstagramSearchResult[] = allMockProfilesData.map(p => ({
+        ...p,
+        // Use the specific URL if provided, otherwise generate one deterministically
+        profilePicUrl: p.profilePicUrl || getDeterministicProfilePic(p.username),
+    }));
+
 
     const foundProfiles = new Map<string, InstagramSearchResult>();
 
