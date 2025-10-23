@@ -5,6 +5,7 @@ import { Review, PersonProfile, UserProfile, ReviewCategory, ReputationLevel, Re
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 
 export async function initDb() {
+  console.log("Initializing database...");
   const client = await pool.connect();
   try {
     await client.query(`
@@ -15,6 +16,7 @@ export async function initDb() {
         reputation VARCHAR(255)
       );
     `);
+    console.log("Table 'persons' created or already exists.");
 
     await client.query(`
       CREATE TABLE IF NOT EXISTS person_identifiers (
@@ -23,6 +25,7 @@ export async function initDb() {
         identifier VARCHAR(255) UNIQUE
       );
     `);
+    console.log("Table 'person_identifiers' created or already exists.");
 
     await client.query(`
       CREATE TABLE IF NOT EXISTS reviews (
@@ -38,6 +41,7 @@ export async function initDb() {
         evidence_url VARCHAR(255)
       );
     `);
+    console.log("Table 'reviews' created or already exists.");
 
     await client.query(`
       CREATE TABLE IF NOT EXISTS users (
@@ -48,6 +52,10 @@ export async function initDb() {
         contribution_score INTEGER
       );
     `);
+    console.log("Table 'users' created or already exists.");
+    console.log("Database initialization complete.");
+  } catch (error) {
+    console.error("Error during database initialization:", error);
   } finally {
     client.release();
   }
