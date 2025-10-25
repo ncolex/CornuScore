@@ -9,6 +9,8 @@ const LoginPage: React.FC = () => {
   const [resetEmail, setResetEmail] = useState('');
   const [resetMessage, setResetMessage] = useState('');
   const [error, setError] = useState('');
+  const [isFormLoading, setIsFormLoading] = useState(false);
+  const [socialLoading, setSocialLoading] = useState<string | null>(null);
   const { login } = useAuth();
   const location = useLocation();
 
@@ -18,8 +20,12 @@ const LoginPage: React.FC = () => {
     e.preventDefault();
     if (phoneNumber.trim().length > 5) {
       setError('');
-      login(phoneNumber.trim());
-      window.location.replace(`#${from}`);
+      setIsFormLoading(true);
+      // Simulate API call delay
+      setTimeout(() => {
+        login(phoneNumber.trim());
+        window.location.replace(`#${from}`);
+      }, 1000);
     } else {
       setError('Por favor, ingresa un número de teléfono válido.');
     }
@@ -38,13 +44,25 @@ const LoginPage: React.FC = () => {
     }
   };
 
+  const handleSocialLogin = async (provider: string) => {
+    setSocialLoading(provider);
+    setError('');
+    try {
+        // Simulate API call delay for a better UX
+        await new Promise(resolve => setTimeout(resolve, 1500));
 
-  const handleSocialLogin = (provider: string) => {
-    // In a real app, this would trigger the OAuth flow.
-    // Here, we just simulate a login for demonstration purposes.
-    const mockPhoneNumber = `${provider}_user_${Date.now().toString().slice(-6)}`;
-    login(mockPhoneNumber);
-    window.location.replace(`#${from}`);
+        // In a real app, this would trigger the OAuth flow.
+        // Here, we just simulate a login for demonstration purposes.
+        const mockPhoneNumber = `${provider}_user_${Date.now().toString().slice(-6)}`;
+        login(mockPhoneNumber);
+        window.location.replace(`#${from}`);
+
+    } catch (err) {
+        setError(`Error al iniciar sesión con ${provider}. Por favor, intenta de nuevo.`);
+        console.error(err);
+    } finally {
+        setSocialLoading(null);
+    }
   };
   
   const switchView = (mode: 'login' | 'forgot') => {
@@ -55,6 +73,7 @@ const LoginPage: React.FC = () => {
       setResetEmail('');
   };
 
+  const isLoading = isFormLoading || !!socialLoading;
 
   return (
     <div className="flex flex-col items-center justify-center text-center -mt-8 min-h-[70vh]">
@@ -78,14 +97,16 @@ const LoginPage: React.FC = () => {
                   placeholder="Número de Teléfono"
                   className="w-full px-4 py-3 text-md border border-gray-300 rounded-lg shadow-sm focus:ring-pink-500 focus:border-pink-500 outline-none transition-all dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder-gray-400"
                   required
+                  disabled={isLoading}
                 />
               </div>
               {error && <p className="text-red-500 text-sm">{error}</p>}
               <button 
                 type="submit"
-                className="w-full py-3 text-lg font-bold text-white bg-pink-500 rounded-full shadow-lg hover:bg-pink-600 transform hover:scale-105 transition-all"
+                disabled={isLoading}
+                className="w-full py-3 text-lg font-bold text-white bg-pink-500 rounded-full shadow-lg hover:bg-pink-600 transform hover:scale-105 transition-all disabled:bg-gray-400 dark:disabled:bg-gray-600 disabled:cursor-wait"
               >
-                Ingresar
+                {isFormLoading ? 'Ingresando...' : 'Ingresar'}
               </button>
             </form>
 
@@ -93,13 +114,14 @@ const LoginPage: React.FC = () => {
                <button 
                   type="button" 
                   onClick={() => switchView('forgot')} 
-                  className="font-semibold text-pink-500 hover:text-pink-600 hover:underline"
+                  className="font-semibold text-pink-500 hover:text-pink-600 hover:underline disabled:text-gray-400 disabled:cursor-not-allowed"
+                  disabled={isLoading}
                 >
                   ¿Olvidaste tu contraseña?
                 </button>
               <p className="text-gray-600 dark:text-gray-400">
                 ¿No tienes cuenta?{' '}
-                <Link to="/register" className="font-semibold text-pink-500 hover:text-pink-600 hover:underline">
+                <Link to="/register" className={`font-semibold text-pink-500 hover:text-pink-600 hover:underline ${isLoading ? 'pointer-events-none text-gray-400' : ''}`}>
                   Regístrate
                 </Link>
               </p>
@@ -112,17 +134,26 @@ const LoginPage: React.FC = () => {
             </div>
 
             <div className="space-y-3">
-              <button onClick={() => handleSocialLogin('google')} className="w-full flex items-center justify-center gap-3 py-3 text-md font-semibold text-gray-700 bg-white border border-gray-300 rounded-full shadow-sm hover:bg-gray-50 transition-all dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600 dark:hover:bg-gray-600">
-                <i className="fa-brands fa-google text-red-500"></i>
-                Continuar con Google
+              <button onClick={() => handleSocialLogin('google')} disabled={isLoading} className="w-full flex items-center justify-center gap-3 py-3 text-md font-semibold text-gray-700 bg-white border border-gray-300 rounded-full shadow-sm hover:bg-gray-50 transition-all disabled:opacity-70 disabled:cursor-wait dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600 dark:hover:bg-gray-600">
+                {socialLoading === 'google' ? (
+                  <><i className="fa-solid fa-spinner animate-spin"></i> Conectando...</>
+                ) : (
+                  <><i className="fa-brands fa-google text-red-500"></i> Continuar con Google</>
+                )}
               </button>
-               <button onClick={() => handleSocialLogin('facebook')} className="w-full flex items-center justify-center gap-3 py-3 text-md font-semibold text-white bg-[#1877F2] rounded-full shadow-sm hover:bg-[#166fe5] transition-all">
-                <i className="fa-brands fa-facebook-f"></i>
-                Continuar con Facebook
+               <button onClick={() => handleSocialLogin('facebook')} disabled={isLoading} className="w-full flex items-center justify-center gap-3 py-3 text-md font-semibold text-white bg-[#1877F2] rounded-full shadow-sm hover:bg-[#166fe5] transition-all disabled:opacity-70 disabled:cursor-wait">
+                {socialLoading === 'facebook' ? (
+                    <><i className="fa-solid fa-spinner animate-spin"></i> Conectando...</>
+                ) : (
+                    <><i className="fa-brands fa-facebook-f"></i> Continuar con Facebook</>
+                )}
               </button>
-               <button onClick={() => handleSocialLogin('instagram')} className="w-full flex items-center justify-center gap-3 py-3 text-md font-semibold text-white bg-gradient-to-r from-purple-500 via-pink-500 to-red-500 rounded-full shadow-sm hover:opacity-90 transition-all">
-                <i className="fa-brands fa-instagram"></i>
-                Continuar con Instagram
+               <button onClick={() => handleSocialLogin('instagram')} disabled={isLoading} className="w-full flex items-center justify-center gap-3 py-3 text-md font-semibold text-white bg-gradient-to-r from-purple-500 via-pink-500 to-red-500 rounded-full shadow-sm hover:opacity-90 transition-all disabled:opacity-70 disabled:cursor-wait">
+                {socialLoading === 'instagram' ? (
+                    <><i className="fa-solid fa-spinner animate-spin"></i> Conectando...</>
+                ) : (
+                    <><i className="fa-brands fa-instagram"></i> Continuar con Instagram</>
+                )}
               </button>
             </div>
           </>
