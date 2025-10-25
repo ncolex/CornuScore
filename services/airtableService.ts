@@ -54,6 +54,33 @@ const calculateReputation = (score: number): ReputationLevel => {
     return ReputationLevel.Risk;
 };
 
+const levenshteinDistance = (a: string, b: string): number => {
+    if (a.length === 0) return b.length;
+    if (b.length === 0) return a.length;
+
+    const matrix = Array(a.length + 1).fill(null).map(() => Array(b.length + 1).fill(null));
+
+    for (let i = 0; i <= a.length; i++) {
+        matrix[i][0] = i;
+    }
+    for (let j = 0; j <= b.length; j++) {
+        matrix[0][j] = j;
+    }
+
+    for (let i = 1; i <= a.length; i++) {
+        for (let j = 1; j <= b.length; j++) {
+            const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+            matrix[i][j] = Math.min(
+                matrix[i - 1][j] + 1,      // deletion
+                matrix[i][j - 1] + 1,      // insertion
+                matrix[i - 1][j - 1] + cost // substitution
+            );
+        }
+    }
+
+    return matrix[a.length][b.length];
+};
+
 export const getProfileByQuery = async (query: string): Promise<PersonProfile | null> => {
   console.log(`Searching for: ${query}`);
   // Normalize query: lowercase, trim, and remove common separators like spaces, dots, underscores.
@@ -63,14 +90,45 @@ export const getProfileByQuery = async (query: string): Promise<PersonProfile | 
 
   if (!normalizedQuery) return null;
 
-  const profile = mockProfiles.find(p => 
-    p.identifiers.some(id => 
+  let bestMatch: { profile: PersonProfile | null, score: number } = { profile: null, score: 0 };
+
+  for (const profile of mockProfiles) {
+    for (const id of profile.identifiers) {
       // Normalize identifier in the same way for a robust match.
-      id.toLowerCase().replace(/[\s._-]+/g, '').includes(normalizedQuery)
-    )
-  );
+      const normalizedId = id.toLowerCase().replace(/[\s._-]+/g, '');
+      let currentScore = 0;
+
+      // 1. Perfect match
+      if (normalizedId === normalizedQuery) {
+        currentScore = 100;
+      } 
+      // 2. Partial match (includes)
+      else if (normalizedId.includes(normalizedQuery) || normalizedQuery.includes(normalizedId)) {
+        const lengthRatio = Math.min(normalizedId.length, normalizedQuery.length) / Math.max(normalizedId.length, normalizedQuery.length);
+        currentScore = 70 + (25 * lengthRatio); // Score between 70 and 95
+      } 
+      // 3. Fuzzy match (Levenshtein)
+      else {
+        const distance = levenshteinDistance(normalizedQuery, normalizedId);
+        const similarity = 1 - (distance / Math.max(normalizedQuery.length, normalizedId.length));
+        
+        // Set a threshold for fuzzy matching to avoid weak matches
+        if (similarity > 0.75) { 
+          currentScore = 60 * similarity; // Score between 45 and 60 for fuzzy matches
+        }
+      }
+
+      if (currentScore > bestMatch.score) {
+        bestMatch = { profile, score: currentScore };
+      }
+    }
+  }
   
-  return profile || null;
+  console.log(`Best match for "${query}": ${bestMatch.profile?.identifiers[0]} with score ${bestMatch.score.toFixed(2)}`);
+
+  // Return a profile only if the match score is reasonably high
+  const MATCH_THRESHOLD = 45;
+  return bestMatch.score >= MATCH_THRESHOLD ? bestMatch.profile : null;
 };
 
 // Fix: Update submitReview to accept an optional pseudoAuthor and make reviewer contact info optional.
