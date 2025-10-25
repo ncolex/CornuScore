@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { submitReview } from '../services/dbService';
+import { submitReview } from '../services/airtableService';
 import { CATEGORIES } from '../constants';
 import { ReviewCategory } from '../types';
 
@@ -19,7 +18,6 @@ const NewReviewPage: React.FC = () => {
   const [evidencePreview, setEvidencePreview] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
-  const navigate = useNavigate();
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files ? e.target.files[0] : null;
@@ -71,7 +69,7 @@ const NewReviewPage: React.FC = () => {
 
     if (success) {
       alert('Reseña enviada con éxito. Gracias por tu contribución.');
-      navigate(`/results/${encodeURIComponent(personIdentifier)}`);
+      window.location.replace(`#/results/${encodeURIComponent(personIdentifier)}`);
     } else {
       setError('Hubo un error al enviar tu reseña. Inténtalo de nuevo.');
     }

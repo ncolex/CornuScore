@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import HeartIcon from '../components/icons/HeartIcon';
-import { registerUser } from '../services/dbService';
+import { registerUser } from '../services/airtableService';
 
 const RegisterPage: React.FC = () => {
   const [phone, setPhone] = useState('');
@@ -13,7 +12,6 @@ const RegisterPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   
   const { login } = useAuth();
-  const navigate = useNavigate();
 
   const validatePassword = (pass: string) => {
     const errors: string[] = [];
@@ -57,7 +55,7 @@ const RegisterPage: React.FC = () => {
 
     if (result.success && result.user) {
       login(result.user.phone);
-      navigate('/profile', { replace: true });
+      window.location.replace('#/profile');
     } else {
       setError(result.message);
     }
@@ -74,7 +72,7 @@ const RegisterPage: React.FC = () => {
 
     if (result.success && result.user) {
         login(result.user.phone);
-        navigate('/profile', { replace: true });
+        window.location.replace('#/profile');
     } else {
         // This might happen if the mock number collides, unlikely but good to handle
         setError(result.message || 'Error en el registro social. Inténtalo de nuevo.');

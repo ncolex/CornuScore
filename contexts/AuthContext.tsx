@@ -1,5 +1,4 @@
 import React, { createContext, useState, ReactNode } from 'react';
-import { loginUser } from '../services/dbService';
 
 export interface User {
   phone: string;
@@ -7,7 +6,7 @@ export interface User {
 
 export interface AuthContextType {
   user: User | null;
-  login: (phone: string, password: string) => Promise<boolean>;
+  login: (phone: string) => void;
   logout: () => void;
 }
 
@@ -24,16 +23,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   });
 
-  const login = async (phone: string, password: string) => {
-    const authenticatedUser = await loginUser(phone, password);
-    if (authenticatedUser) {
-      const newUser = { phone: authenticatedUser.phone };
-      setUser(newUser);
-      window.sessionStorage.setItem('user', JSON.stringify(newUser));
-      return true;
-    } else {
-      return false;
-    }
+  const login = (phone: string) => {
+    const newUser = { phone };
+    setUser(newUser);
+    window.sessionStorage.setItem('user', JSON.stringify(newUser));
   };
 
   const logout = () => {

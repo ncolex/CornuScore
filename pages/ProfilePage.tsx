@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getUserProfile } from '../services/dbService';
+import { getUserProfile } from '../services/airtableService';
 import { generatePlaceholderImage } from '../services/imageGenerationService';
 import { UserProfile, Review } from '../types';
 import ReviewCard from '../components/ReviewCard';

@@ -1,16 +1,14 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import HeartIcon from '../components/icons/HeartIcon';
 import SearchIcon from '../components/icons/SearchIcon';
 
 const HomePage: React.FC = () => {
   const [query, setQuery] = useState('');
-  const navigate = useNavigate();
 
   const handleSearch = (e: React.FormEvent | React.MouseEvent) => {
     e.preventDefault();
     if (query.trim()) {
-      navigate(`/results/${encodeURIComponent(query.trim())}`);
+      window.location.replace(`#/results/${encodeURIComponent(query.trim())}`);
     }
   };
 

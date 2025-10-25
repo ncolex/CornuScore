@@ -1,7 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { PersonProfile, InstagramSearchResult } from '../types';
-import { searchInstagramProfiles } from '../services/instagramService';
-import Avatar from './Avatar';
+import { searchInstagramProfiles } from '../services/airtableService';
 
 interface InstagramProfileCardProps {
   profile: PersonProfile | null;
@@ -79,7 +78,7 @@ const InstagramProfileCard: React.FC<InstagramProfileCardProps> = ({ profile, qu
                         rel="noopener noreferrer"
                         className="flex items-center gap-4 p-3 rounded-lg hover:bg-pink-100/50 border border-transparent hover:border-pink-200 transition-all"
                     >
-                        <Avatar username={p.username} src={p.profilePicUrl} className="w-20 h-20" />
+                        <img src={p.profilePicUrl} alt={`Foto de perfil de ${p.username}`} className="w-20 h-20 rounded-full object-cover bg-gray-300" />
                         <div className="flex-grow">
                             <p className="font-bold text-xl text-gray-900">{p.username}</p>
                             <p className="text-lg text-gray-600">{p.fullName}</p>

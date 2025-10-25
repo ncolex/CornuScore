@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { GoogleGenAI, Type } from '@google/genai';
 import { ReviewCategory } from '../types';
-import { submitReview } from '../services/dbService';
+import { submitReview } from '../services/airtableService';
 import { CATEGORIES } from '../constants';
 import GeneratedReviewCard from '../components/GeneratedReviewCard';
 

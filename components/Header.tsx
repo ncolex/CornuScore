@@ -1,11 +1,10 @@
 import React from 'react';
-import { Link, NavLink, useNavigate } from 'react-router-dom';
+import { Link, NavLink } from 'react-router-dom';
 import HeartIcon from './icons/HeartIcon';
 import { useAuth } from '../hooks/useAuth';
 
 const Header: React.FC = () => {
   const { user, logout } = useAuth();
-  const navigate = useNavigate();
 
   const activeLinkStyle = {
     color: '#ec4899',
@@ -14,7 +13,7 @@ const Header: React.FC = () => {
 
   const handleLogout = () => {
     logout();
-    navigate('/');
+    window.location.replace('#/');
   };
 
   return (
