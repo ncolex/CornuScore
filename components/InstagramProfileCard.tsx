@@ -40,16 +40,16 @@ const InstagramProfileCard: React.FC<InstagramProfileCardProps> = ({ profile, qu
 
     if (isLoading) {
         return (
-            <div className="bg-white/80 backdrop-blur-sm p-4 rounded-2xl shadow-lg border border-white/30 text-center">
+            <div className="bg-white/80 backdrop-blur-sm p-4 rounded-2xl shadow-lg border border-white/30 dark:bg-gray-800/80 dark:border-gray-700 text-center">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-pink-400 mx-auto"></div>
-                <p className="mt-3 text-sm font-semibold text-gray-600">Verificando perfil en Instagram...</p>
+                <p className="mt-3 text-sm font-semibold text-gray-600 dark:text-gray-400">Verificando perfil en Instagram...</p>
             </div>
         );
     }
     
     if (error) {
          return (
-             <div className="bg-white/80 backdrop-blur-sm p-4 rounded-2xl shadow-lg border border-white/30 text-center text-red-600">
+             <div className="bg-white/80 backdrop-blur-sm p-4 rounded-2xl shadow-lg border border-white/30 dark:bg-gray-800/80 dark:border-gray-700 text-center text-red-600 dark:text-red-400">
                 <i className="fa-solid fa-circle-exclamation mr-2"></i>{error}
             </div>
          );
@@ -57,18 +57,18 @@ const InstagramProfileCard: React.FC<InstagramProfileCardProps> = ({ profile, qu
 
     if (foundProfiles.length === 0) {
         return (
-            <div className="bg-white/80 backdrop-blur-sm p-4 rounded-2xl shadow-lg border border-white/30 text-center">
-                <i className="fa-brands fa-instagram text-3xl text-gray-400 mb-2"></i>
-                <p className="font-semibold text-gray-700">No se encontraron perfiles públicos en Instagram para "{query}".</p>
-                <p className="text-xs text-gray-500 mt-1">El perfil puede ser privado, no existir, o tener un nombre de usuario diferente.</p>
+            <div className="bg-white/80 backdrop-blur-sm p-4 rounded-2xl shadow-lg border border-white/30 dark:bg-gray-800/80 dark:border-gray-700 text-center">
+                <i className="fa-brands fa-instagram text-3xl text-gray-400 dark:text-gray-500 mb-2"></i>
+                <p className="font-semibold text-gray-700 dark:text-gray-300">No se encontraron perfiles públicos en Instagram para "{query}".</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">El perfil puede ser privado, no existir, o tener un nombre de usuario diferente.</p>
             </div>
         );
     }
     
     // If one or more profiles are found, always show the selection list to let the user confirm.
     return (
-        <div className="bg-white/80 backdrop-blur-sm p-4 rounded-2xl shadow-lg border border-white/30">
-            <h3 className="font-bold text-lg text-center text-gray-800 mb-3">Se encontraron uno o más perfiles. ¿Cuál es el correcto?</h3>
+        <div className="bg-white/80 backdrop-blur-sm p-4 rounded-2xl shadow-lg border border-white/30 dark:bg-gray-800/80 dark:border-gray-700">
+            <h3 className="font-bold text-lg text-center text-gray-800 dark:text-gray-200 mb-3">Se encontraron uno o más perfiles. ¿Cuál es el correcto?</h3>
             <div className="space-y-3">
                 {foundProfiles.map(p => (
                     <a 
@@ -76,12 +76,12 @@ const InstagramProfileCard: React.FC<InstagramProfileCardProps> = ({ profile, qu
                         href={`https://www.instagram.com/${p.username}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex items-center gap-4 p-3 rounded-lg hover:bg-pink-100/50 border border-transparent hover:border-pink-200 transition-all"
+                        className="flex items-center gap-4 p-3 rounded-lg hover:bg-pink-100/50 dark:hover:bg-gray-700/50 border border-transparent hover:border-pink-200 dark:hover:border-gray-600 transition-all"
                     >
                         <img src={p.profilePicUrl} alt={`Foto de perfil de ${p.username}`} className="w-20 h-20 rounded-full object-cover bg-gray-300" />
                         <div className="flex-grow">
-                            <p className="font-bold text-xl text-gray-900">{p.username}</p>
-                            <p className="text-lg text-gray-600">{p.fullName}</p>
+                            <p className="font-bold text-xl text-gray-900 dark:text-gray-100">{p.username}</p>
+                            <p className="text-lg text-gray-600 dark:text-gray-300">{p.fullName}</p>
                         </div>
                         <i className="fa-solid fa-arrow-up-right-from-square text-gray-500 text-xl"></i>
                     </a>

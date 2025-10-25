@@ -20,10 +20,10 @@ const ReputationMeter: React.FC<ReputationMeterProps> = ({ profile }) => {
 
   return (
     <div className="relative">
-      <div className="bg-white/80 backdrop-blur-sm p-6 rounded-2xl shadow-lg border border-white/30 text-center">
-        <h2 className="text-xl font-bold text-gray-800 mb-1">Reputación de</h2>
+      <div className="bg-white/80 backdrop-blur-sm p-6 rounded-2xl shadow-lg border border-white/30 text-center dark:bg-gray-800/80 dark:border-gray-700">
+        <h2 className="text-xl font-bold text-gray-800 dark:text-gray-200 mb-1">Reputación de</h2>
         <p className="text-2xl font-bold text-pink-500 mb-1 capitalize">{profile.identifiers[0]}</p>
-        <p className="text-sm text-gray-500 mb-4 flex items-center justify-center gap-1">
+        <p className="text-sm text-gray-500 dark:text-gray-400 mb-4 flex items-center justify-center gap-1">
           <i className="fa-solid fa-location-dot"></i>
           {profile.country}
         </p>
@@ -33,18 +33,18 @@ const ReputationMeter: React.FC<ReputationMeterProps> = ({ profile }) => {
             <i className={`${reputationDetails.icon} text-4xl text-white`}></i>
           </div>
           <div>
-            <p className="text-lg font-semibold text-gray-700">Resultado:</p>
+            <p className="text-lg font-semibold text-gray-700 dark:text-gray-300">Resultado:</p>
             <p className={`text-3xl font-bold ${reputationDetails.color}`}>{reputationDetails.label}</p>
           </div>
         </div>
 
-        <div className="w-full bg-gray-200 rounded-full h-4 overflow-hidden">
+        <div className="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-4 overflow-hidden">
           <div 
             className={`h-4 rounded-full ${reputationDetails.progressColor} transition-all duration-500 ease-out`} 
             style={{ width: getProgressBarWidth() }}
           ></div>
         </div>
-        <p className="text-sm text-gray-500 mt-2">{profile.reviews.length} reseña(s) encontrada(s).</p>
+        <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">{profile.reviews.length} reseña(s) encontrada(s).</p>
       </div>
     </div>
   );

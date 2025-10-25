@@ -34,24 +34,24 @@ const GeneratedReviewCard: React.FC<GeneratedReviewCardProps> = ({ result, onAdd
   };
 
   return (
-    <div className={`bg-white/90 backdrop-blur-sm p-4 rounded-xl shadow-md border border-white/30 transition-opacity ${isAdded ? 'opacity-50' : 'opacity-100'}`}>
+    <div className={`bg-white/90 backdrop-blur-sm p-4 rounded-xl shadow-md border border-white/30 transition-opacity dark:bg-gray-800/90 dark:border-gray-700 ${isAdded ? 'opacity-50' : 'opacity-100'}`}>
       <div className="flex justify-between items-start mb-2">
         <div>
             <p className="text-lg font-bold text-pink-500 capitalize">{result.personIdentifier}</p>
-            <p className="text-sm text-gray-500">{result.country}</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400">{result.country}</p>
         </div>
         <div className={`flex items-center gap-2 text-sm font-bold text-white px-3 py-1 rounded-full ${categoryDetails.color}`}>
           <span>{categoryDetails.emoji}</span>
           <span>{categoryDetails.label}</span>
         </div>
       </div>
-      <p className="text-gray-700 mb-4">"{result.text}"</p>
+      <p className="text-gray-700 dark:text-gray-300 mb-4">"{result.text}"</p>
       
       <div className="flex justify-end items-center text-sm">
         <button 
           onClick={handleAddClick}
           disabled={isAdded || isLoading}
-          className="flex items-center gap-2 px-4 py-2 rounded-full font-bold transition-colors disabled:cursor-not-allowed bg-green-500 text-white hover:bg-green-600 disabled:bg-gray-400"
+          className="flex items-center gap-2 px-4 py-2 rounded-full font-bold transition-colors disabled:cursor-not-allowed bg-green-500 text-white hover:bg-green-600 disabled:bg-gray-400 dark:disabled:bg-gray-600"
         >
           {isLoading ? (
             <><i className="fa-solid fa-spinner animate-spin"></i> Agregando...</>

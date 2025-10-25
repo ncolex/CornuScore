@@ -14,7 +14,7 @@ const WebCheckTile: React.FC<WebCheckTileProps> = ({ result }) => {
         href={result.link} 
         target="_blank" 
         rel="noopener noreferrer" 
-        className="block bg-gray-800 p-4 rounded-xl shadow-lg border border-red-400/50 transition-all transform hover:scale-[1.03] group overflow-hidden relative"
+        className="block bg-gray-800 dark:bg-black p-4 rounded-xl shadow-lg border border-red-400/50 transition-all transform hover:scale-[1.03] group overflow-hidden relative"
       >
         <img src={result.screenshotUrl} alt={`Captura de ${result.source}`} className="absolute inset-0 w-full h-full object-cover opacity-30 group-hover:opacity-50 transition-opacity duration-300" />
         <div className="relative">
@@ -65,14 +65,14 @@ const WebCheckTile: React.FC<WebCheckTileProps> = ({ result }) => {
     <div className="flex items-center gap-4">
       <i className={`${statusDetails.icon} ${statusDetails.color} text-2xl text-center w-6`}></i>
       <div className="flex-grow">
-        <p className="font-semibold text-gray-800 leading-tight">{result.title}</p>
-        <p className="text-sm text-gray-600 mt-1">{result.snippet}</p>
+        <p className="font-semibold text-gray-800 dark:text-gray-200 leading-tight">{result.title}</p>
+        <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{result.snippet}</p>
       </div>
-      {isClickable && <i className="fa-solid fa-chevron-right text-gray-400 self-center"></i>}
+      {isClickable && <i className="fa-solid fa-chevron-right text-gray-400 dark:text-gray-500 self-center"></i>}
     </div>
   );
 
-  const commonClasses = "block bg-white/80 backdrop-blur-sm p-4 rounded-xl shadow-md border border-white/30 transition-all";
+  const commonClasses = "block bg-white/80 backdrop-blur-sm p-4 rounded-xl shadow-md border border-white/30 transition-all dark:bg-gray-800/80 dark:border-gray-700";
 
   if (isClickable) {
     return (
@@ -80,7 +80,7 @@ const WebCheckTile: React.FC<WebCheckTileProps> = ({ result }) => {
         href={result.link} 
         target="_blank" 
         rel="noopener noreferrer" 
-        className={`${commonClasses} hover:shadow-lg hover:border-pink-300 transform hover:scale-[1.02]`}
+        className={`${commonClasses} hover:shadow-lg hover:border-pink-300 dark:hover:border-pink-600 transform hover:scale-[1.02]`}
       >
         {tileContent}
       </a>

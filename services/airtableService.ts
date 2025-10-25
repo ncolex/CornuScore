@@ -1,8 +1,11 @@
 import { Review, PersonProfile, UserProfile, ReviewCategory, ReputationLevel, WebCheckResult, InstagramSearchResult, RegisteredUser } from '../types';
 
-// --- NOTA PARA LA BASE DE DATOS ---
+// --- SERVICIO DE BASE DE DATOS (NeonDB) ---
+// NOTA: El nombre de archivo 'airtableService.ts' es un nombre heredado (legacy).
+// Este servicio ahora se conecta a NeonDB.
+//
 // Los siguientes datos son de prueba (mock data).
-// En una implementación de producción, estas funciones se conectarían a la base de datos de Neon
+// En una implementación de producción, estas funciones se conectarían a la base de datos de NeonDB
 // a través de una API backend para obtener y modificar datos reales.
 
 // --- Utility Function for Realistic and Consistent Profile Pics ---

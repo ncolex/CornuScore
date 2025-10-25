@@ -72,17 +72,17 @@ const ProfilePage: React.FC = () => {
     return (
       <div className="text-center py-20">
         <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-pink-500 mx-auto"></div>
-        <p className="mt-4 text-lg font-semibold text-gray-700">Cargando Perfil...</p>
+        <p className="mt-4 text-lg font-semibold text-gray-700 dark:text-gray-300">Cargando Perfil...</p>
       </div>
     );
   }
 
   if (!profile) {
     return (
-      <div className="text-center bg-white/80 p-8 rounded-2xl shadow-lg max-w-md mx-auto">
+      <div className="text-center bg-white/80 dark:bg-gray-800/80 p-8 rounded-2xl shadow-lg max-w-md mx-auto">
         <i className="fa-solid fa-circle-question text-6xl text-pink-300 mb-4"></i>
-        <h2 className="text-2xl font-bold text-gray-800 mb-2">No se pudo cargar el perfil</h2>
-        <p className="text-gray-600">Hubo un error al obtener tus datos. Por favor, intenta de nuevo más tarde.</p>
+        <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-200 mb-2">No se pudo cargar el perfil</h2>
+        <p className="text-gray-600 dark:text-gray-400">Hubo un error al obtener tus datos. Por favor, intenta de nuevo más tarde.</p>
       </div>
     );
   }
@@ -92,8 +92,8 @@ const ProfilePage: React.FC = () => {
   const ProfileAvatar = () => {
     if (isImageLoading) {
       return (
-        <div className="w-24 h-24 rounded-full bg-gray-200 mx-auto mb-4 flex items-center justify-center animate-pulse">
-            <i className="fa-solid fa-image text-4xl text-gray-400"></i>
+        <div className="w-24 h-24 rounded-full bg-gray-200 mx-auto mb-4 flex items-center justify-center animate-pulse dark:bg-gray-700">
+            <i className="fa-solid fa-image text-4xl text-gray-400 dark:text-gray-500"></i>
         </div>
       );
     }
@@ -102,7 +102,7 @@ const ProfilePage: React.FC = () => {
         <img 
             src={profileImageUrl} 
             alt="Foto de perfil generada por IA" 
-            className="w-24 h-24 rounded-full object-cover mx-auto mb-4 shadow-lg border-4 border-white"
+            className="w-24 h-24 rounded-full object-cover mx-auto mb-4 shadow-lg border-4 border-white dark:border-gray-800"
         />
       );
     }
@@ -112,17 +112,17 @@ const ProfilePage: React.FC = () => {
 
   return (
     <div className="max-w-3xl mx-auto space-y-8">
-      <div className="bg-white/80 backdrop-blur-sm p-8 rounded-2xl shadow-lg border border-white/30 text-center">
+      <div className="bg-white/80 backdrop-blur-sm p-8 rounded-2xl shadow-lg border border-white/30 text-center dark:bg-gray-800/80 dark:border-gray-700">
         <ProfileAvatar />
-        <h1 className="text-3xl font-bold text-gray-800">{pseudoUsername}</h1>
-        <p className="text-lg text-gray-600">
+        <h1 className="text-3xl font-bold text-gray-800 dark:text-gray-200">{pseudoUsername}</h1>
+        <p className="text-lg text-gray-600 dark:text-gray-400">
           Puntuación de Contribuidor: 
           <span className="font-bold text-pink-500 ml-2">{profile.contributionScore}</span>
         </p>
       </div>
 
       <div>
-        <h2 className="text-2xl font-bold text-gray-800 mb-4 text-center">
+        <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-200 mb-4 text-center">
           Mis Reseñas Publicadas ({userReviews.length})
         </h2>
         <div className="space-y-4">
@@ -136,7 +136,7 @@ const ProfilePage: React.FC = () => {
               />
             )
           ) : (
-            <p className="text-center text-gray-500 bg-white/80 p-6 rounded-xl shadow-md">
+            <p className="text-center text-gray-500 bg-white/80 dark:bg-gray-800/80 p-6 rounded-xl shadow-md dark:text-gray-400">
               Aún no has publicado ninguna reseña. ¡Anímate a ser el primero!
             </p>
           )}

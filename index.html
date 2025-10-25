@@ -4,6 +4,14 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>CornuScore</title>
+    <script>
+      // On page load or when changing themes, best to add inline in `head` to avoid FOUC
+      if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+        document.documentElement.classList.add('dark')
+      } else {
+        document.documentElement.classList.remove('dark')
+      }
+    </script>
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- 
       NOTA PARA PRODUCCIÓN: 
@@ -17,6 +25,10 @@
     <style>
       body {
         background: linear-gradient(135deg, #FFDDE1, #EE9CA7);
+        transition: background 0.3s ease-in-out;
+      }
+      .dark body {
+        background: linear-gradient(135deg, #2D3748, #1A202C);
       }
     </style>
   <script type="importmap">
@@ -31,7 +43,7 @@
 }
 </script>
 </head>
-  <body class="bg-pink-50 min-h-screen">
+  <body class="min-h-screen">
     <div id="root"></div>
   </body>
 </html>

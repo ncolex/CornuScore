@@ -86,12 +86,12 @@ const AIGeneratorPage: React.FC = () => {
 
     return (
         <div className="max-w-4xl mx-auto">
-            <div className="bg-white/80 backdrop-blur-sm p-8 rounded-2xl shadow-lg border border-white/30 mb-8">
+            <div className="bg-white/80 backdrop-blur-sm p-8 rounded-2xl shadow-lg border border-white/30 dark:bg-gray-800/80 dark:border-gray-700 mb-8">
                 <h1 className="text-3xl font-bold text-center text-pink-500 mb-4 flex items-center justify-center gap-3">
                     <i className="fa-solid fa-wand-magic-sparkles"></i>
                     Generador de Contenido con IA
                 </h1>
-                <p className="text-center text-gray-600 mb-6">
+                <p className="text-center text-gray-600 dark:text-gray-400 mb-6">
                     Busca noticias en la web para generar borradores de reseñas. Revisa cuidadosamente cada sugerencia antes de publicarla.
                 </p>
 
@@ -101,7 +101,7 @@ const AIGeneratorPage: React.FC = () => {
                         value={topic}
                         onChange={(e) => setTopic(e.target.value)}
                         placeholder="Ej: Famosos infieles 2023"
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-pink-500 focus:border-pink-500"
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-pink-500 focus:border-pink-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder-gray-400"
                     />
                     <button
                         onClick={handleGenerate}
@@ -117,15 +117,15 @@ const AIGeneratorPage: React.FC = () => {
                 </div>
             </div>
 
-            {error && <p className="text-red-500 text-sm text-center bg-red-100 p-3 rounded-lg mb-6">{error}</p>}
+            {error && <p className="text-red-500 text-sm text-center bg-red-100 dark:bg-red-900/50 dark:text-red-400 p-3 rounded-lg mb-6">{error}</p>}
             
             {sources.length > 0 && (
-                <div className="mb-6 bg-white/70 p-4 rounded-lg shadow-md">
-                    <h3 className="font-bold text-gray-700 mb-2">Fuentes Encontradas:</h3>
+                <div className="mb-6 bg-white/70 p-4 rounded-lg shadow-md dark:bg-gray-800/70">
+                    <h3 className="font-bold text-gray-700 dark:text-gray-300 mb-2">Fuentes Encontradas:</h3>
                     <ul className="list-disc list-inside text-sm space-y-1">
                         {sources.map((source, index) => (
                             <li key={index}>
-                                <a href={source.web.uri} target="_blank" rel="noopener noreferrer" className="text-pink-600 hover:underline">
+                                <a href={source.web.uri} target="_blank" rel="noopener noreferrer" className="text-pink-600 hover:underline dark:text-pink-400">
                                     {source.web.title}
                                 </a>
                             </li>
@@ -136,7 +136,7 @@ const AIGeneratorPage: React.FC = () => {
 
             {results.length > 0 && (
                  <div className="space-y-4">
-                    <h2 className="text-2xl font-bold text-gray-800 text-center">Resultados Sugeridos</h2>
+                    <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-200 text-center">Resultados Sugeridos</h2>
                     {results.map((result, index) => (
                         <GeneratedReviewCard 
                             key={`${result.personIdentifier}-${index}`} 
@@ -147,9 +147,9 @@ const AIGeneratorPage: React.FC = () => {
                 </div>
             )}
              { !isLoading && results.length === 0 && sources.length > 0 && (
-                 <div className="text-center bg-white/80 p-8 rounded-2xl shadow-lg">
+                 <div className="text-center bg-white/80 p-8 rounded-2xl shadow-lg dark:bg-gray-800/80">
                     <i className="fa-solid fa-file-circle-question text-5xl text-pink-300 mb-4"></i>
-                    <p className="text-gray-600">La búsqueda encontró fuentes, pero la IA no pudo extraer datos estructurados. Prueba reformulando tu tema.</p>
+                    <p className="text-gray-600 dark:text-gray-400">La búsqueda encontró fuentes, pero la IA no pudo extraer datos estructurados. Prueba reformulando tu tema.</p>
                 </div>
              )}
         </div>

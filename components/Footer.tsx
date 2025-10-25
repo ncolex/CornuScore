@@ -3,8 +3,8 @@ import React from 'react';
 
 const Footer: React.FC = () => {
   return (
-    <footer className="bg-white/50 py-4 mt-8">
-      <div className="container mx-auto px-4 text-center text-xs text-gray-600">
+    <footer className="bg-white/50 dark:bg-gray-800/50 py-4 mt-8">
+      <div className="container mx-auto px-4 text-center text-xs text-gray-600 dark:text-gray-400">
         <p className="font-bold mb-1">Aviso Legal</p>
         <p>
           No publiques información que identifique de forma privada o infrinja la ley. 
