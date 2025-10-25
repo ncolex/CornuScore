@@ -26,6 +26,14 @@ export interface Review {
   personReviewed?: string; // For user profile page
 }
 
+export interface InstaStoriesData {
+  avatarUrl: string;
+  fullName: string;
+  bio: string;
+  publicPostsCount: number;
+  fetchedAt: string; // ISO 8601
+}
+
 export interface PersonProfile {
   id: string;
   identifiers: string[]; // e.g., ['John Doe', '@johndoe', '123456789']
@@ -33,6 +41,7 @@ export interface PersonProfile {
   totalScore: number;
   reputation: ReputationLevel;
   reviews: Review[];
+  instagramProfile?: InstaStoriesData;
 }
 
 export interface UserProfile {

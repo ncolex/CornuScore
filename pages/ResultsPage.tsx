@@ -138,9 +138,8 @@ const ResultsPage: React.FC = () => {
 
   return (
     <div className="max-w-3xl mx-auto space-y-8">
-      <ReputationMeter profile={profile} />
-
       <InstagramProfileCard profile={profile} query={query || ''} />
+      <ReputationMeter profile={profile} />
 
       <WebPresenceContent />
       

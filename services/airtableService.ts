@@ -1,4 +1,5 @@
 import { Review, PersonProfile, UserProfile, ReviewCategory, ReputationLevel, WebCheckResult, InstagramSearchResult, RegisteredUser } from '../types';
+import { fetchInstagramProfileData } from './instaStoriesApiService';
 
 // --- SERVICIO DE BASE DE DATOS (NeonDB) ---
 // NOTA: El nombre de archivo 'airtableService.ts' es un nombre heredado (legacy).
@@ -131,7 +132,31 @@ export const getProfileByQuery = async (query: string): Promise<PersonProfile | 
 
   // Return a profile only if the match score is reasonably high
   const MATCH_THRESHOLD = 45;
-  return bestMatch.score >= MATCH_THRESHOLD ? bestMatch.profile : null;
+  const finalProfile = bestMatch.score >= MATCH_THRESHOLD ? bestMatch.profile : null;
+
+    if (finalProfile && !finalProfile.instagramProfile) {
+        // Find a suitable identifier to use as an Instagram username
+        const instagramUsername = finalProfile.identifiers.find(id => !id.includes(' ') && isNaN(Number(id)));
+        
+        if (instagramUsername) {
+            console.log(`Profile found. Attempting to fetch extended Instagram data for ${instagramUsername}`);
+            const instaData = await fetchInstagramProfileData(instagramUsername);
+            
+            if (instaData) {
+                // "Save" the data to our mock profile. In a real app, this would be a DB update.
+                finalProfile.instagramProfile = {
+                    avatarUrl: instaData.avatar,
+                    fullName: instaData.fullname,
+                    bio: instaData.biography,
+                    publicPostsCount: instaData.posts_count,
+                    fetchedAt: new Date().toISOString()
+                };
+                console.log("Successfully fetched and attached extended Instagram data.");
+            }
+        }
+    }
+    
+  return finalProfile;
 };
 
 // Fix: Update submitReview to accept an optional pseudoAuthor and make reviewer contact info optional.
