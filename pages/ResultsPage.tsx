@@ -13,35 +13,50 @@ const ResultsPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [webResults, setWebResults] = useState<WebCheckResult[]>([]);
   const [isWebLoading, setIsWebLoading] = useState(true);
+  const [webError, setWebError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchProfileAndWebPresence = async () => {
+    const fetchAllData = async () => {
       if (!query) return;
-      
+
       setIsLoading(true);
       setIsWebLoading(true);
-      
-      const profilePromise = getProfileByQuery(query);
-      const webPromise = performWebChecks(query);
-      
-      const profileData = await profilePromise;
-      setProfile(profileData);
+      setWebError(null);
+
+      // Using Promise.allSettled to handle promises in parallel, even if one fails
+      const [profileResult, webResult] = await Promise.allSettled([
+        getProfileByQuery(query),
+        performWebChecks(query),
+      ]);
+
+      // Handle Profile Result
+      if (profileResult.status === 'fulfilled') {
+        setProfile(profileResult.value);
+      } else {
+        console.error("Failed to fetch profile:", profileResult.reason);
+        setProfile(null);
+      }
       setIsLoading(false);
-      
-      const webData = await webPromise;
-      // Sort web results to prioritize "found" Badoo profiles
-      const sortedWebData = [...webData].sort((a, b) => {
-        const isABadooFound = a.source === 'Badoo' && a.status === 'found';
-        const isBBadooFound = b.source === 'Badoo' && b.status === 'found';
-        if (isABadooFound && !isBBadooFound) return -1;
-        if (!isABadooFound && isBBadooFound) return 1;
-        return 0;
-      });
-      setWebResults(sortedWebData);
+
+      // Handle Web Presence Result
+      if (webResult.status === 'fulfilled') {
+        const sortedWebData = [...webResult.value].sort((a, b) => {
+            const isABadooFound = a.source === 'Badoo' && a.status === 'found';
+            const isBBadooFound = b.source === 'Badoo' && b.status === 'found';
+            if (isABadooFound && !isBBadooFound) return -1;
+            if (!isABadooFound && isBBadooFound) return 1;
+            return 0;
+        });
+        setWebResults(sortedWebData);
+      } else {
+        console.error("Web presence check failed:", webResult.reason);
+        setWebError('La verificación de presencia en la web falló. Por favor, inténtalo de nuevo más tarde.');
+        setWebResults([]);
+      }
       setIsWebLoading(false);
     };
 
-    fetchProfileAndWebPresence();
+    fetchAllData();
   }, [query]);
 
   if (isLoading) {
@@ -63,6 +78,11 @@ const ResultsPage: React.FC = () => {
             <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-pink-400 mx-auto"></div>
             <p className="mt-3 text-sm font-semibold text-gray-600">Buscando perfiles públicos...</p>
           </div>
+        ) : webError ? (
+            <div className="text-center text-red-600 bg-red-100 p-4 rounded-xl shadow-md border border-red-200">
+                <i className="fa-solid fa-circle-exclamation mr-2"></i>
+                {webError}
+            </div>
         ) : (
           <div className="space-y-4">
             {webResults.length > 0 ? (
@@ -83,8 +103,8 @@ const ResultsPage: React.FC = () => {
       <div className="max-w-3xl mx-auto space-y-8">
         <div className="text-center bg-white/80 p-8 rounded-2xl shadow-lg">
           <i className="fa-solid fa-user-slash text-6xl text-pink-300 mb-4"></i>
-          <h2 className="text-2xl font-bold text-gray-800 mb-2">Sin Resultados Internos</h2>
-          <p className="text-gray-600 mb-6">No se encontraron reseñas para "{query}" en nuestra base de datos. A continuación, verificamos si existe un perfil público en Instagram.</p>
+          <h2 className="text-2xl font-bold text-gray-800 mb-2">Aún no hay reseñas para "{query}"</h2>
+          <p className="text-gray-600 mb-6">No hemos encontrado un perfil en nuestra base de datos, ¡pero tú puedes ser el primero en crear una reseña! Mientras tanto, hemos buscado su presencia en la web y perfiles de Instagram.</p>
           <Link 
             to="/review" 
             className="px-8 py-3 text-lg font-bold text-white bg-pink-500 rounded-full shadow-lg hover:bg-pink-600 transform hover:scale-105 transition-all"

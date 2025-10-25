@@ -171,6 +171,11 @@ export const performWebChecks = async (query: string): Promise<WebCheckResult[]>
     console.log(`Performing web check for: ${query}`);
     await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate a longer delay for web scraping/API calls
 
+    // Simulate a potential failure for testing purposes
+    if (query.toLowerCase().trim() === 'failcheck') {
+        throw new Error("Simulated web check API failure.");
+    }
+
     const results: WebCheckResult[] = [];
     const normalizedQuery = query.toLowerCase().trim();
     const hash = normalizedQuery.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
