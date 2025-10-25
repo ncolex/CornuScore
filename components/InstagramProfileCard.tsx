@@ -15,12 +15,12 @@ const DetailedProfileView: React.FC<{ profileData: NonNullable<PersonProfile['in
             <div className="flex flex-col sm:flex-row items-center gap-6">
                 <img 
                     src={profileData.avatarUrl} 
-                    alt={`Foto de perfil de ${profileData.fullName}`} 
+                    alt={`Foto de perfil de ${profileData.fullName || username}`} 
                     className="w-28 h-28 rounded-full object-cover bg-gray-300 shadow-md border-4 border-white dark:border-gray-700"
                 />
                 <div className="flex-grow text-center sm:text-left">
                     <a href={`https://www.instagram.com/${username}`} target="_blank" rel="noopener noreferrer" className="hover:underline">
-                        <p className="font-bold text-2xl text-gray-900 dark:text-gray-100">{profileData.fullName}</p>
+                        <p className="font-bold text-2xl text-gray-900 dark:text-gray-100">{profileData.fullName || username}</p>
                         <p className="text-md text-pink-500 mb-2">@{username}</p>
                     </a>
                     <p className="text-sm text-gray-600 dark:text-gray-400 italic mb-3">"{profileData.bio}"</p>

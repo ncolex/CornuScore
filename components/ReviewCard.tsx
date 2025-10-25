@@ -56,7 +56,7 @@ const ReviewCard: React.FC<ReviewCardProps> = ({ review, onEdit, onDelete }) => 
             <button
               onClick={() => onEdit(review.id)}
               className="flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold text-gray-700 bg-gray-200 hover:bg-gray-300 transition-colors dark:bg-gray-600 dark:text-gray-200 dark:hover:bg-gray-500"
-              aria-label="Editar reseña"
+              aria-label={review.personReviewed ? `Editar reseña sobre ${review.personReviewed}` : "Editar reseña"}
             >
               <i className="fa-solid fa-pencil"></i>
             </button>
@@ -65,7 +65,7 @@ const ReviewCard: React.FC<ReviewCardProps> = ({ review, onEdit, onDelete }) => 
             <button
               onClick={() => onDelete(review.id)}
               className="flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold text-red-700 bg-red-100 hover:bg-red-200 transition-colors dark:bg-red-900/50 dark:text-red-300 dark:hover:bg-red-900/80"
-              aria-label="Eliminar reseña"
+              aria-label={review.personReviewed ? `Eliminar reseña sobre ${review.personReviewed}` : "Eliminar reseña"}
             >
               <i className="fa-solid fa-trash-can"></i>
             </button>
