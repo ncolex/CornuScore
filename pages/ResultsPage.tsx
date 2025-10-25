@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { getProfileByQuery, performWebChecks } from '../services/airtableService';
 import { PersonProfile, WebCheckResult } from '../types';
@@ -14,6 +14,22 @@ const ResultsPage: React.FC = () => {
   const [webResults, setWebResults] = useState<WebCheckResult[]>([]);
   const [isWebLoading, setIsWebLoading] = useState(true);
   const [webError, setWebError] = useState<string | null>(null);
+
+  const summaryStats = useMemo(() => {
+    if (!profile) {
+      return null;
+    }
+
+    const positiveReviews = profile.reviews.filter(r => r.score > 0).length;
+    const negativeReviews = profile.reviews.filter(r => r.score < 0).length;
+
+    return {
+      totalScore: profile.totalScore,
+      reviewCount: profile.reviews.length,
+      positiveReviews,
+      negativeReviews,
+    };
+  }, [profile]);
 
   useEffect(() => {
     const fetchAllData = async () => {
@@ -132,6 +148,29 @@ const ResultsPage: React.FC = () => {
         <h2 className="text-2xl font-bold text-gray-800 mb-4 text-center">
           Reseñas de la Comunidad ({profile.reviews.length})
         </h2>
+
+        {summaryStats && profile.reviews.length > 0 && (
+            <div className="bg-white/80 backdrop-blur-sm p-6 rounded-2xl shadow-lg border border-white/30 mb-6">
+              <h3 className="text-xl font-bold text-gray-800 mb-4 text-center">Resumen de Reputación</h3>
+              <div className="grid grid-cols-3 divide-x divide-gray-200 text-center">
+                <div className="px-2">
+                  <p className="text-3xl font-bold text-pink-500">{summaryStats.totalScore}</p>
+                  <p className="text-sm text-gray-600 font-semibold">Puntaje Total</p>
+                </div>
+                <div className="px-2">
+                  <p className="text-3xl font-bold text-gray-700">{summaryStats.reviewCount}</p>
+                  <p className="text-sm text-gray-600 font-semibold">Reseñas</p>
+                </div>
+                <div className="px-2">
+                  <p className="text-3xl font-bold">
+                    <span className="text-red-500">{summaryStats.negativeReviews}</span> / <span className="text-green-500">{summaryStats.positiveReviews}</span>
+                  </p>
+                  <p className="text-sm text-gray-600 font-semibold">Neg. / Pos.</p>
+                </div>
+              </div>
+            </div>
+          )}
+
         {profile.reviews.length > 0 ? (
           <div className="space-y-4 relative">
             {profile.reviews.map(review => <ReviewCard key={review.id} review={review} />)}
